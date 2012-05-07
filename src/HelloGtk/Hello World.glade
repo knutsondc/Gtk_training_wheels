@@ -1,0 +1,97 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<interface>
+  <!-- interface-requires gtk+ 3.0 -->
+  <object class="GtkListStore" id="liststore">
+    <columns>
+      <!-- column-name Project -->
+      <column type="gchararray"/>
+      <!-- column-name Status -->
+      <column type="gchararray"/>
+      <!-- column-name Priority -->
+      <column type="guint"/>
+    </columns>
+    <data>
+      <row>
+        <col id="0" translatable="yes">Learn GTK</col>
+        <col id="1" translatable="yes">Pending</col>
+        <col id="2">1</col>
+      </row>
+      <row>
+        <col id="0" translatable="yes">Learn Android</col>
+        <col id="1" translatable="yes">Pending</col>
+        <col id="2">2</col>
+      </row>
+      <row>
+        <col id="0" translatable="yes">Review Django</col>
+        <col id="1" translatable="yes">Waiting</col>
+        <col id="2">3</col>
+      </row>
+      <row>
+        <col id="0" translatable="yes">Review Python</col>
+        <col id="1" translatable="yes">Waiting</col>
+        <col id="2">4</col>
+      </row>
+    </data>
+  </object>
+  <object class="GtkTextBuffer" id="textbuffer">
+    <property name="text" translatable="yes">This branch built with Glade.
+Where's the ListView?</property>
+  </object>
+  <object class="GtkWindow" id="window">
+    <property name="can_focus">False</property>
+    <property name="title" translatable="yes">Hello GTK+ World!</property>
+    <signal name="destroy" handler="on_window_destroy" swapped="no"/>
+    <child>
+      <object class="GtkBox" id="box">
+        <property name="visible">True</property>
+        <property name="can_focus">False</property>
+        <property name="orientation">vertical</property>
+        <child>
+          <object class="GtkTextView" id="textview">
+            <property name="visible">True</property>
+            <property name="can_focus">True</property>
+            <property name="justification">center</property>
+            <property name="buffer">textbuffer</property>
+          </object>
+          <packing>
+            <property name="expand">False</property>
+            <property name="fill">True</property>
+            <property name="position">0</property>
+          </packing>
+        </child>
+        <child>
+          <object class="GtkTreeView" id="treeview">
+            <property name="visible">True</property>
+            <property name="can_focus">True</property>
+            <property name="model">liststore</property>
+            <property name="reorderable">True</property>
+            <property name="enable_grid_lines">both</property>
+            <child internal-child="selection">
+              <object class="GtkTreeSelection" id="treeview-selection2"/>
+            </child>
+          </object>
+          <packing>
+            <property name="expand">True</property>
+            <property name="fill">True</property>
+            <property name="position">1</property>
+          </packing>
+        </child>
+        <child>
+          <object class="GtkButton" id="button">
+            <property name="label" translatable="yes">Click Me!</property>
+            <property name="visible">True</property>
+            <property name="can_focus">True</property>
+            <property name="receives_default">True</property>
+            <property name="use_action_appearance">False</property>
+            <signal name="clicked" handler="on_button_clicked" swapped="no"/>
+          </object>
+          <packing>
+            <property name="expand">False</property>
+            <property name="fill">True</property>
+            <property name="position">2</property>
+          </packing>
+        </child>
+      </object>
+    </child>
+  </object>
+</interface>
