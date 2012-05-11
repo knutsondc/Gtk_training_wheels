@@ -12,15 +12,18 @@
     </columns>
   </object>
   <object class="GtkTextBuffer" id="textbuffer">
-    <property name="text" translatable="yes">This branch built with Glade.
-Data Entry and Update Example.</property>
+    <property name="text" translatable="yes">GTK+ Data Entry and Update Demo Program
+This version built using Glade.
+Start By Adding a Record - Click "Add Record" Button
+Double click on record fields to edit them.
+Click on records and then click on "Delete Records" to delete records.</property>
   </object>
   <object class="GtkWindow" id="window">
     <property name="can_focus">False</property>
-    <property name="title" translatable="yes">Hello GTK+ World!</property>
+    <property name="title" translatable="yes">GTK+ Data Entry Demo</property>
     <signal name="destroy" handler="on_window_destroy" swapped="no"/>
     <child>
-      <object class="GtkBox" id="box">
+      <object class="GtkBox" id="main_box">
         <property name="visible">True</property>
         <property name="can_focus">False</property>
         <property name="orientation">vertical</property>
@@ -42,11 +45,13 @@ Data Entry and Update Example.</property>
             <property name="visible">True</property>
             <property name="can_focus">True</property>
             <property name="model">liststore</property>
+            <property name="headers_clickable">False</property>
             <property name="reorderable">True</property>
             <property name="enable_grid_lines">both</property>
             <child internal-child="selection">
               <object class="GtkTreeSelection" id="treeview-selection">
                 <property name="mode">multiple</property>
+                <signal name="changed" handler="on_selection_changed" swapped="no"/>
               </object>
             </child>
           </object>
@@ -57,7 +62,7 @@ Data Entry and Update Example.</property>
           </packing>
         </child>
         <child>
-          <object class="GtkBox" id="box1">
+          <object class="GtkBox" id="button_box">
             <property name="visible">True</property>
             <property name="can_focus">False</property>
             <property name="homogeneous">True</property>
@@ -68,26 +73,12 @@ Data Entry and Update Example.</property>
                 <property name="can_focus">True</property>
                 <property name="receives_default">True</property>
                 <property name="use_action_appearance">False</property>
-                <signal name="clicked" handler="on_button_clicked" swapped="no"/>
+                <signal name="clicked" handler="on_add_button_clicked" swapped="no"/>
               </object>
               <packing>
                 <property name="expand">False</property>
                 <property name="fill">True</property>
                 <property name="position">0</property>
-              </packing>
-            </child>
-            <child>
-              <object class="GtkButton" id="edit_record_button">
-                <property name="label" translatable="yes">Edit Record</property>
-                <property name="visible">True</property>
-                <property name="can_focus">True</property>
-                <property name="receives_default">True</property>
-                <property name="use_action_appearance">False</property>
-              </object>
-              <packing>
-                <property name="expand">False</property>
-                <property name="fill">True</property>
-                <property name="position">1</property>
               </packing>
             </child>
             <child>
@@ -97,6 +88,7 @@ Data Entry and Update Example.</property>
                 <property name="can_focus">True</property>
                 <property name="receives_default">True</property>
                 <property name="use_action_appearance">False</property>
+                <signal name="clicked" handler="on_delete_button_clicked" swapped="no"/>
               </object>
               <packing>
                 <property name="expand">False</property>
