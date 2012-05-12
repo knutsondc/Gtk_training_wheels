@@ -14,9 +14,10 @@ class RecordsStore(Gtk.ListStore):
         
 class AddRecord():
     
-    def __init__(self, recordsstore):
+    def __init__(self, recordsstore, list_w):
 # The recordsstore parameter is the ListStore the new record will go into.
         self.recordsstore = recordsstore
+        self.list_w = list_w
 # The UI for the dialog the user completes for each new record is defined in a glade
 # file.
         builder = Gtk.Builder()
@@ -38,9 +39,11 @@ class AddRecord():
 # and adjustment holding its value will lie within the valid range of 1 to 4.
         self.project = ""
         self.status = ""
+        self.priority = 1
+        self.pointer = None
         self.window.show_all() 
                
-    def on_ok_clicked(self, widget):
+    def on_ok_clicked(self, widget): # pylint: disable-msg = W0613
 # Read the data the user entered, check it for valid data, and, if so,  store the new
 # record in the ListStore 
         self.project = self.project_entry.get_text()
@@ -59,10 +62,9 @@ class AddRecord():
             return
         else:
             self.recordsstore.append(row)
-            
         self.window.destroy()
         
-    def on_cancel_clicked(self, widget):
+    def on_cancel_clicked(self, widget): # pylint: disable-msg = W0613
 # If the user decides to cancel creation of the new record, just close the "Add Record"
 # dialog without reading or saving any of the data.
         self.window.destroy()

@@ -21,16 +21,18 @@ class My_Data:
 # were taken.
         self.selection = builder.get_object("treeview-selection")
 # Make sure that that reference to selected records is empty at program start
+        self.adjustment = Gtk.Adjustment(1.0, 1.0, 4.0, 1.0, 4.0, 0.0)
         self.treeiter = None
+        self.renderer = []
 # Eventually the following three lines setting up a fixed three-field RecordsStore
 # will be replaced with code offering the user the choice of opening an existing
 # RecordsStore or creating a new one with a user-determined number and type of 
 # data fields (columns).
-        types = [str, str, int]
-        names = ["Project", "Status", "Priority"]
+        self.types = [type("string"), type("string"), type(1)]
+        self.names = ["Project", "Status", "Priority"]
 # Call constructor of subclassed ListStore that adds list of names of columns in the
 # ListStore as another member variable of the ListStore object.
-        self.CurrentRecordsStore = Model.RecordsStore(types, names)
+        self.CurrentRecordsStore = Model.RecordsStore(self.types, self.names)
 # Call method for constructing the TreeView used to display the data.
         self.construct_view()
         builder.connect_signals(self)
@@ -43,32 +45,38 @@ class My_Data:
 # produced the "edited" signal is found from the identity of the CellRenderer pointed
 #.to by the "widget" data contained in the "edited" signal. The "edited" signal emits
 # a "path" value identifying the row in which the edited cell can be found.
-        self.renderer = []
-        names = self.CurrentRecordsStore.names
-        for i in range(len(names)):
-            self.renderer.append(Gtk.CellRendererText())
+        for i in range(len(self.names)):
+            if self.types[i] == type(1):
+                self.renderer.append(Gtk. CellRendererSpin())                
+                self.renderer[i].set_property("adjustment", self.adjustment)
+                self.renderer[i].connect("edited", self.on_records_edited)
+                expand = False
+            else:
+                self.renderer.append(Gtk.CellRendererText())
+                self.renderer[i].connect("edited", self.on_records_edited)
+                expand = True
 # By default, TreeView cells aren't editable, so we have to set this property.
             self.renderer[i].set_property("editable", True)
 # Glade doesn't handle anything about TreeViewColumns or CellRenderers, so we must
 # connect the CellRenderer to the relevant signal by hand.
-            self.renderer[i].connect("edited", self.on_records_edited)
+            
 # Create a TreeView Column to hold a data field, give it a name header, attach the
 # relevant CellRenderer, and tell the TreeViewColumn from which column of the
 #ListStore to read its data.
-            column = Gtk.TreeViewColumn(names[i], self.renderer[i], text= i)
+            column = Gtk.TreeViewColumn(self.names[i], self.renderer[i], text = i)
             column.set_sizing(Gtk.TreeViewColumnSizing.AUTOSIZE)
-# Finally, append the completed TreeViewColumn to the TreeView widget.   
-            self.list_w.append_column(column)            
+            column.set_expand(expand)
+            self.list_w.append_column(column)
            
     def on_window_destroy(self, widget): # pylint: disable-msg = w0613
         Gtk.main_quit()
     
-    def on_add_button_clicked(self, widget):
+    def on_add_button_clicked(self, widget): # pylint: disable-msg = W0613
 # The class and constructor method for a new data record is found in the Model.py 
 # file. We pass the ListStore we're using as a parameter to allow for eventual use
 # of multiple ListStores.
-        Model.AddRecord(self.CurrentRecordsStore)
-        
+        Model.AddRecord(self.CurrentRecordsStore, self.list_w)
+                  
     def on_records_edited(self, widget, path, text):
 # The widget parameter is the CellRenderer that produced the "edited" signal. To
 # learn the column number of the cell that produced the signal, we look for the widget
@@ -78,17 +86,22 @@ class My_Data:
         for w in self.renderer:
             if self.renderer[self.renderer.index(w)] == widget:
                 col_num = self.renderer.index(w)
+ 
 # The "text" parameter emitted with the "edited" signal is a str representation of 
-# the new data the user typed into the edited cell. If the relevant column in the
+# the new data the user entered into the edited cell. If the relevant column in the
 # ListStore is expecting an int, we need to cast the str as an int. Eventually, code
 # to check whether the user's input is capable of being cast into the correct data
-# type and providing an appropriate response to erroneous input should be inserted here.
-        if isinstance(self.CurrentRecordsStore[path][col_num], int):
+# type and providing an appropriate response to erroneous input will be inserted
+# also..               
+        if isinstance(widget, Gtk.CellRendererSpin):
             self.CurrentRecordsStore[path][col_num] = int(text)
+# Make sure the adjustment object holding the value for changes to Priority is reset
+# to 1.0 after using it.
+            self.adjustment.set_value(1.0)
         else:
             self.CurrentRecordsStore[path][col_num] = text
-        
-    def on_delete_button_clicked(self, widget):
+                    
+    def on_delete_button_clicked(self, widget): # pylint: disable-msg = W0613
 # First collect a list of pointers to the rows in the TreeView the user has selected.
         iters = []
         for row in self.treeiter:
