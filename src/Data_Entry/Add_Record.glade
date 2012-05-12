@@ -6,6 +6,7 @@
     <property name="border_width">5</property>
     <property name="title" translatable="yes">Add a Record</property>
     <property name="modal">True</property>
+    <property name="window_position">center-on-parent</property>
     <property name="type_hint">dialog</property>
     <child internal-child="vbox">
       <object class="GtkBox" id="dialog-vbox">
@@ -161,9 +162,9 @@
     <property name="value">-1</property>
     <property name="step_increment">1</property>
   </object>
+  <object class="GtkEntryBuffer" id="project_entry_buffer"/>
+  <object class="GtkEntryBuffer" id="status_entry_buffer"/>
   <object class="GtkTextBuffer" id="priority_textbuffer">
     <property name="text" translatable="yes">Enter New Project Priority:</property>
   </object>
-  <object class="GtkEntryBuffer" id="project_entry_buffer"/>
-  <object class="GtkEntryBuffer" id="status_entry_buffer"/>
 </interface>
