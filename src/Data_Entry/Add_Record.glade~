@@ -16,9 +16,7 @@
         <child>
           <object class="GtkTextView" id="project_textview">
             <property name="visible">True</property>
-            <property name="sensitive">False</property>
-            <property name="can_focus">False</property>
-            <property name="double_buffered">False</property>
+            <property name="can_focus">True</property>
             <property name="editable">False</property>
             <property name="cursor_visible">False</property>
             <property name="buffer">project_textbuffer</property>
@@ -42,24 +40,20 @@
           <packing>
             <property name="expand">False</property>
             <property name="fill">True</property>
-            <property name="position">1</property>
+            <property name="position">2</property>
           </packing>
         </child>
         <child>
           <object class="GtkTextView" id="status_textview">
             <property name="visible">True</property>
-            <property name="sensitive">False</property>
-            <property name="can_focus">False</property>
-            <property name="double_buffered">False</property>
+            <property name="can_focus">True</property>
             <property name="editable">False</property>
-            <property name="cursor_visible">False</property>
             <property name="buffer">status_textbuffer</property>
-            <property name="accepts_tab">False</property>
           </object>
           <packing>
             <property name="expand">False</property>
             <property name="fill">True</property>
-            <property name="position">2</property>
+            <property name="position">3</property>
           </packing>
         </child>
         <child>
@@ -73,51 +67,6 @@
             <property name="expand">False</property>
             <property name="fill">True</property>
             <property name="position">3</property>
-          </packing>
-        </child>
-        <child>
-          <object class="GtkBox" id="priority_box">
-            <property name="visible">True</property>
-            <property name="can_focus">False</property>
-            <child>
-              <object class="GtkTextView" id="priority_textview">
-                <property name="visible">True</property>
-                <property name="sensitive">False</property>
-                <property name="can_focus">False</property>
-                <property name="double_buffered">False</property>
-                <property name="pixels_above_lines">4</property>
-                <property name="editable">False</property>
-                <property name="cursor_visible">False</property>
-                <property name="buffer">priority_textbuffer</property>
-                <property name="accepts_tab">False</property>
-              </object>
-              <packing>
-                <property name="expand">False</property>
-                <property name="fill">True</property>
-                <property name="position">0</property>
-              </packing>
-            </child>
-            <child>
-              <object class="GtkSpinButton" id="priority_spinbutton">
-                <property name="visible">True</property>
-                <property name="can_focus">True</property>
-                <property name="invisible_char">●</property>
-                <property name="caps_lock_warning">False</property>
-                <property name="adjustment">priority_adjustment</property>
-                <property name="numeric">True</property>
-              </object>
-              <packing>
-                <property name="expand">False</property>
-                <property name="fill">True</property>
-                <property name="pack_type">end</property>
-                <property name="position">1</property>
-              </packing>
-            </child>
-          </object>
-          <packing>
-            <property name="expand">False</property>
-            <property name="fill">True</property>
-            <property name="position">4</property>
           </packing>
         </child>
         <child internal-child="action_area">
@@ -162,7 +111,50 @@
             <property name="expand">False</property>
             <property name="fill">True</property>
             <property name="pack_type">end</property>
-            <property name="position">5</property>
+            <property name="position">0</property>
+          </packing>
+        </child>
+        <child>
+          <object class="GtkBox" id="priority_box">
+            <property name="visible">True</property>
+            <property name="can_focus">False</property>
+            <child>
+              <object class="GtkTextView" id="priority_textview">
+                <property name="visible">True</property>
+                <property name="can_focus">True</property>
+                <property name="pixels_above_lines">4</property>
+                <property name="editable">False</property>
+                <property name="cursor_visible">False</property>
+                <property name="buffer">priority_textbuffer</property>
+                <property name="accepts_tab">False</property>
+              </object>
+              <packing>
+                <property name="expand">False</property>
+                <property name="fill">True</property>
+                <property name="position">0</property>
+              </packing>
+            </child>
+            <child>
+              <object class="GtkSpinButton" id="priority_spinbutton">
+                <property name="visible">True</property>
+                <property name="can_focus">True</property>
+                <property name="invisible_char">●</property>
+                <property name="caps_lock_warning">False</property>
+                <property name="adjustment">priority_adjustment</property>
+                <property name="numeric">True</property>
+              </object>
+              <packing>
+                <property name="expand">False</property>
+                <property name="fill">True</property>
+                <property name="pack_type">end</property>
+                <property name="position">1</property>
+              </packing>
+            </child>
+          </object>
+          <packing>
+            <property name="expand">False</property>
+            <property name="fill">True</property>
+            <property name="position">4</property>
           </packing>
         </child>
       </object>
