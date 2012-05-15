@@ -2,7 +2,7 @@
 # into a Gtk.ListStore, display the records and allow the user to edit and delete them.
 from Error_Dialog import Error_Check
 from Model import RecordsStore, AddRecord
-from gi.repository import Gtk, GObject # pylint: disable-msg = E0611
+from gi.repository import Gtk, Gdk, GObject # pylint: disable-msg = E0611
 
 
 
@@ -12,6 +12,7 @@ class My_Data:
         builder = Gtk.Builder()
         builder.add_from_file("Data_Entry.glade")
         self.window = builder.get_object("window")
+        self.main_box = builder.get_object("main_box")
         self.textbuffer = builder.get_object("textbuffer")
         self.add_record_button = builder.get_object("add_record_button")
         self.delete_record_button = builder.get_object("delete_record_button")
@@ -40,6 +41,7 @@ class My_Data:
 # Call method for constructing the TreeView used to display the data.
         self.construct_view()
         builder.connect_signals(self)
+       
         
     def construct_view(self):
 # First tell the TreeView from where to get its data to display.
@@ -76,9 +78,14 @@ class My_Data:
 # ListStore to read its data.
             column = Gtk.TreeViewColumn(self.names[i], self.renderer[i], text = i)
             column.set_sizing(Gtk.TreeViewColumnSizing.AUTOSIZE)
+            column.set_clickable(True)
+            column.set_reorderable(True)
+            column.connect("clicked", self.on_column_clicked)
             column.set_expand(expand)
-# Finally, append the column to the TreeView.
+# Append the column to the TreeView.
             self.list_w.append_column(column)
+            
+            
            
     def on_window_destroy(self, widget): # pylint: disable-msg = w0613
         Gtk.main_quit()
@@ -90,7 +97,7 @@ class My_Data:
         AddRecord(self.CurrentRecordsStore, self.list_w)
                   
     def on_records_edited(self, widget, path, text):
-# First, make a local copy of the current contents of the edited record to write
+# First, make a local copy of the current contents of the edited record to writ
 # into the new data for the edited cell and submit to an error checking function
 # before saving the local copy of the old record to the ListStore as the new,
 # updated record.The "path"parameter emitted with the signal contains the row number of the cell that
@@ -136,6 +143,7 @@ class My_Data:
 # needed to contain the visible widgets now contained in it, just as when a window
 # is initially opened.
         self.window.reshow_with_initial_size()
+       
         
     def on_selection_changed(self, selection):
 # The TreeViewSelection contains references to the rows in the TreeView the user has
@@ -143,7 +151,13 @@ class My_Data:
 # Note that this code is for multiple selection.
         self.CurrentRecordsStore, self.treeiter = selection.get_selected_rows()
 
+    def on_column_clicked(self, column):
+        col_num = self.names.index(column.get_title())    
+        column.set_sort_column_id(col_num)
+        column.set_sort_indicator(True)
+        self.window.reshow_with_initial_size()
         
+
 if __name__=="__main__":
     win = My_Data()
     win.window.show_all()
