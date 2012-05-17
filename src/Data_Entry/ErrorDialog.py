@@ -21,19 +21,22 @@ class ErrorDialog:
     def on_ok_button_clicked(self, widget):
         self.window.destroy()
         
-def Error_Check(self, row):
+def ErrorCheck(col_num, text):
 
-    if len(row[0]) < 1:
+    if ((col_num == 0) and (len(text) < 1)):
         ErrorDialog("Invalid or incomplete Project name.")
         return False
-    elif len(row[1]) < 1:
+    elif ((col_num == 1) and (len(text) < 1)):
         ErrorDialog("Invalid or incomplete Status description.")
         return False
 # The SpinButton used for the Priority field should prevent entry of out-of-bounds
 # values here, but check anyway for the sake of completeness.
-    elif (not isinstance(row[2], int) or row[2] < 1 or row[2] > 4):
-        ErrorDialog("Invalid or incomplete Priority value.")
-        return False
-        
+    elif col_num == 2:
+        if not isinstance(text, int):
+            ErrorDialog("Priority value must be an integer between 1 and 4.")
+            return False
+        if ((text < 1) or (text > 4)):
+            ErrorDialog("Priority value must be an integer between 1 and 4.")
+            return False
     else:
         return True
