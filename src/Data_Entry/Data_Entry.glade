@@ -4,7 +4,7 @@
   <object class="GtkTextBuffer" id="textbuffer">
     <property name="text" translatable="yes">GTK+ Glade Data Entry and Update Demo Program
 Start By Adding a Record - Click "Add Record" Button
-Double click on record fields to edit them.
+Click on record fields to edit them and hit Tab or Enter to save edits.
 Click on records and then click on "Delete Records" to delete them.
 Click on column headers to sort on that field.</property>
   </object>

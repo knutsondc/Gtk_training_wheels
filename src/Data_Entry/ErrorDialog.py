@@ -31,12 +31,15 @@ def ErrorCheck(col_num, text):
         return False
 # The SpinButton used for the Priority field should prevent entry of out-of-bounds
 # values here, but check anyway for the sake of completeness.
+
     elif col_num == 2:
+        
         if not isinstance(text, int):
             ErrorDialog("Priority value must be an integer between 1 and 4.")
             return False
+        
         if ((text < 1) or (text > 4)):
             ErrorDialog("Priority value must be an integer between 1 and 4.")
             return False
-    else:
-        return True
+
+    return True

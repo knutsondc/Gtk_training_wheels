@@ -50,16 +50,19 @@ class AddRecord():
 # Read the data the user entered, check it for valid data, and, if so,  store the new
 # record in the ListStore 
         self.project = self.project_entry.get_text()
+        if not ErrorCheck(0, self.project):
+            return
         self.status = self.status_entry.get_text()
+        if not ErrorCheck(1, self.status):
+            return
         self.priority = int(self.priority_adjustment.get_value())
+        if not ErrorCheck(2, self.priority):
+            return
         row = [self.project, self.status, self.priority]
 # Alert the user to invalid data with GUI alerts from Error_Dialog.py. If the new
 # record's data fails the error check, nothing gets written to the ListStore and
 # the user is returned to the Add Record dialog.
-        if not Error_Check(self, row):
-            return
-        else:
-            self.recordsstore.append(row)
+        self.recordsstore.append(row)
 # After storing valid data, this window's work is done.
         self.window.destroy()
         
