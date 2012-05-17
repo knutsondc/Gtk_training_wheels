@@ -1,7 +1,7 @@
 # Simple data store object definition for use in project intended to help
 # learn how to implement GTK+ 3.0 ListStores and add, delete, and edit theur
 # contents in a Gtk.TreeView
-from Error_Dialog import Error_Check
+from ErrorDialog import ErrorCheck
 from gi.repository import Gtk # pylint: disable-msg = E0611
 
 
