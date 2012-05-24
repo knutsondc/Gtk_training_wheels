@@ -1,11 +1,12 @@
 # Main program control file for this toy project to demonstrate entry of data 
 # records into a Gtk.ListStore, display the records and allow the user to edit
-# and delete them.
+# and delete them. This version relies upon a glade .xml file for several major
+# user interface windows and dialogs.
 
 from Model import RecordsStore, AddRecordDialog
 import os
 import shelve
-from gi.repository import Gtk, GdkPixbuf, GObject #pylint: disable-msg = E061
+from gi.repository import Gtk, Gdk, GdkPixbuf, GObject #pylint: disable-msg = E0611
 
 
 class MyData:
@@ -43,7 +44,7 @@ class MyData:
         
         builder.connect_signals(self)
         
-
+        self.clipboard = Gtk.Clipboard.get(Gdk.SELECTION_CLIPBOARD)
         
 # Eventually the following three lines setting up a fixed three-field 
 # RecordsStore will be replaced with code offering the user the choice of
@@ -303,8 +304,9 @@ class MyData:
                 treeview.set_cursor_on_cell(path, col, \
                                             col.get_data("column_number"), True)
                 treeview.grab_focus()
-            return False
+            return [path, col, col.get_data("column_number"), False]
         
+                
     def on_new_menu_item_activate(self, widget):
 # Go back to where we were when the program first opened: close and open
 # disk files and wipe the ListStore (and, consequently, the TreeView, clean.
@@ -459,6 +461,15 @@ class MyData:
         msg.destroy()
         
     def on_copy_menu_item_activate(self, widget):
+#        path, column, col_num, fl = self.on_mouse_button_press_event(self, self.treeview, event)
+#        if path is not None:
+#            myiter = self.CurrentRecordsStore.get_iter(path)
+#        else:
+#            return
+#        text = self.CurrentRecordsStore.get_value(myiter, col_num)
+#        self.clipboard.set_text(text)
+#        return
+        
         msg = Gtk.MessageDialog(self.window, Gtk.DialogFlags.MODAL, \
                                 Gtk.MessageType.INFO, Gtk.ButtonsType.OK, \
                                 "Development Update")
@@ -468,8 +479,11 @@ class MyData:
         msg.destroy()
         
     def on_paste_menu_item_activate(self, widget):
-        msg = Gtk.MessageDialog(self.window, Gtk.DialogFlags.MODAL, \
-                                Gtk.MessageType.INFO, Gtk.ButtonsType.OK, \
+#        text = self.clipboard.wait_for_text()
+#        if text is not None:
+#            widget.set_text(text)
+        msg = Gtk.MessageDialog(self.window, Gtk.DialogFlags.MODAL, 
+                                Gtk.MessageType.INFO, Gtk.ButtonsType.OK, 
                                 "Development Update")
         msg.format_secondary_text\
             ("Sorry - Edit menu 'Paste' not yet implemented.")
@@ -477,8 +491,8 @@ class MyData:
         msg.destroy()
         
     def on_delete_menu_item_activate(self, widget):
-        msg = Gtk.MessageDialog(self.window, Gtk.DialogFlags.MODAL, \
-                                Gtk.MessageType.INFO, Gtk.ButtonsType.OK, \
+        msg = Gtk.MessageDialog(self.window, Gtk.DialogFlags.MODAL, 
+                                Gtk.MessageType.INFO, Gtk.ButtonsType.OK, 
                                 "Development Update")
         msg.format_secondary_text\
             ("Sorry - Edit menu 'Delete' not yet implemented.")

@@ -1,6 +1,7 @@
 # Simple data store object definition for use in project intended to help
 # learn how to implement GTK+ 3.0 ListStores and add, delete, and edit theur
-# contents in a Gtk.TreeView
+# contents in a Gtk.TreeView. This versioni relies upon glade to construct the
+# AddRecordDialog.
 
 from gi.repository import Gtk # pylint: disable-msg = E0611
 
@@ -13,7 +14,8 @@ class RecordsStore(Gtk.ListStore):
         Gtk.ListStore.__init__(self, *columns)
         self.names = names
         
-def AddRecordDialog(treeview, fields = {'project':'', 'status': '', 'priority': 1.0, 'focus': None }):
+def AddRecordDialog(treeview, fields = \
+                    {'project':'', 'status': '', 'priority': 1.0, 'focus': None }):
         
 # The UI for the dialog the user completes for each new record is defined in a glade
 # file.
