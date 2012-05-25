@@ -102,7 +102,9 @@ class MyData:
         helpmenu.add(instructions_menu_item)
         
         self.treeview = Gtk.TreeView()
+        self.treeview.set_grid_lines(Gtk.TreeViewGridLines.BOTH)
         self.selection = self.treeview.get_selection()
+        self.selection.set_mode(Gtk.SelectionMode.MULTIPLE)
         self.selection.connect("changed", self.on_selection_changed)
         
         self.adjustment = Gtk.Adjustment(1.0, 1.0, 4.0, 1.0, 4.0, 0.0)
