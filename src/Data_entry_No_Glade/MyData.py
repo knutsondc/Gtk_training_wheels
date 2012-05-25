@@ -18,7 +18,7 @@ class MyData:
         self.window.connect("delete-event", self.on_window_delete)
         box = Gtk.Box(orientation = Gtk.Orientation.VERTICAL)
         self.window.add(box)
-        win_lab = Gtk.Label("Gtk Data Entry and Display Demo - Unsaved Data File.")
+        win_lab = Gtk.Label("Gtk Data Entry and Display Demo.")
         box.pack_start(win_lab, False, True, 0)
         
         menu_bar = Gtk.MenuBar()
@@ -34,29 +34,29 @@ class MyData:
         new_menu_item = Gtk.ImageMenuItem.new_with_mnemonic("gtk-new")
         new_menu_item.set_use_stock(True)
         new_menu_item.set_always_show_image(True)
-        new_menu_item.connect("activate", self.on_new_menu_item_activated)
+        new_menu_item.connect("activate", self.on_new_menu_item_activate)
         filemenu.add(new_menu_item)
         open_menu_item = Gtk.ImageMenuItem.new_with_mnemonic("gtk-open")
         open_menu_item.set_use_stock(True)
         open_menu_item.set_always_show_image(True)
-        open_menu_item.connect("activate", self.on_open_menu_item_activated)
+        open_menu_item.connect("activate", self.on_open_menu_item_activate)
         filemenu.add(open_menu_item)
         save_menu_item = Gtk.ImageMenuItem.new_with_mnemonic("gtk-save")
         save_menu_item.set_use_stock(True)
         save_menu_item.set_always_show_image(True)
-        save_menu_item.connect("activate", self.on_save_menu_item_activated)
+        save_menu_item.connect("activate", self.on_save_menu_item_activate)
         filemenu.add(save_menu_item)
         save_as_menu_item = Gtk.ImageMenuItem.new_with_mnemonic("gtk-save-as")
         save_as_menu_item.set_use_stock(True)
         save_as_menu_item.set_always_show_image(True)
-        save_as_menu_item.connect("activate", self.on_save_as_menu_item_activated)
+        save_as_menu_item.connect("activate", self.on_save_as_menu_item_activate)
         filemenu.add(save_as_menu_item)
         menu_separator_item = Gtk.SeparatorMenuItem()
         filemenu.add(menu_separator_item)
         quit_menu_item = Gtk.ImageMenuItem.new_with_mnemonic("gtk-quit")
         quit_menu_item.set_use_stock(True)
         quit_menu_item.set_always_show_image(True)
-        quit_menu_item.connect("activate", self.on_quit_menu_item_activated)
+        quit_menu_item.connect("activate", self.on_quit_menu_item_activate)
         filemenu.add(quit_menu_item)
         
         edit_menu_item = Gtk.MenuItem.new_with_mnemonic('_Edit')
@@ -67,22 +67,22 @@ class MyData:
         cut_menu_item = Gtk.ImageMenuItem.new_with_mnemonic("gtk-cut")
         cut_menu_item.set_use_stock(True)
         cut_menu_item.set_always_show_image(True)
-        cut_menu_item.connect("activate", self.on_cut_menu_item_activated)
+        cut_menu_item.connect("activate", self.on_cut_menu_item_activate)
         editmenu.add(cut_menu_item)
         copy_menu_item = Gtk.ImageMenuItem.new_with_mnemonic("gtk-copy")
         copy_menu_item.set_use_stock(True)
         copy_menu_item.set_always_show_image(True)
-        copy_menu_item.connect("activate", self.on_copy_menu_item_activated)
+        copy_menu_item.connect("activate", self.on_copy_menu_item_activate)
         editmenu.add(copy_menu_item)
         paste_menu_item = Gtk.ImageMenuItem.new_with_mnemonic("gtk-paste")
         paste_menu_item.set_use_stock(True)
         paste_menu_item.set_always_show_image(True)
-        paste_menu_item.connect("activate", self.on_paste_menu_item_activated)
+        paste_menu_item.connect("activate", self.on_paste_menu_item_activate)
         editmenu.add(paste_menu_item)
         delete_menu_item = Gtk.ImageMenuItem.new_with_mnemonic("gtk-delete")
         delete_menu_item.set_use_stock(True)
         delete_menu_item.set_always_show_image(True)
-        delete_menu_item.connect("activate", self.on_delete_menu_item_activated)
+        delete_menu_item.connect("activate", self.on_delete_menu_item_activate)
         editmenu.add(delete_menu_item)
         
         help_menu_item = Gtk.MenuItem.new_with_mnemonic('_Help')
@@ -93,12 +93,12 @@ class MyData:
         about_menu_item = Gtk.ImageMenuItem.new_with_mnemonic("gtk-about")
         about_menu_item.set_use_stock(True)
         about_menu_item.set_always_show_image(True)
-        about_menu_item.connect("activate", self.on_about_menu_item_activated)
+        about_menu_item.connect("activate", self.on_about_menu_item_activate)
         helpmenu.add(about_menu_item)
         instructions_menu_item = Gtk.ImageMenuItem.new_with_mnemonic("gtk-info")
         instructions_menu_item.set_use_stock(True)
         instructions_menu_item.set_always_show_image(True)
-        instructions_menu_item.connect("activate", self.on_instructions_menu_item_activated)
+        instructions_menu_item.connect("activate", self.on_instructions_menu_item_activate)
         helpmenu.add(instructions_menu_item)
         
         self.treeview = Gtk.TreeView()
@@ -378,7 +378,7 @@ class MyData:
                 treeview.grab_focus()
             return [path, col, col.get_data("column_number"), False]
     
-    def on_new_menu_item_activated(self, widget):
+    def on_new_menu_item_activate(self, widget):
 # Go back to where we were when the program first opened: close and open
 # disk files and wipe the ListStore (and, consequently, the TreeView, clean.
 # Change the disk_file to None so we won't try to write to alcose file!
@@ -390,7 +390,7 @@ class MyData:
         self.window.reshow_with_initial_size()
         self.window.set_title("Unsaved Data File")            
     
-    def on_open_menu_item_activated(self, widget):
+    def on_open_menu_item_activate(self, Widget):
 # First, open a FileChooser dialog in OPEN mode.
         dialog = Gtk.FileChooserDialog("Open File", self.window, \
                                        Gtk.FileChooserAction.OPEN, \
@@ -414,12 +414,11 @@ class MyData:
             if self.disk_file is not None:
                 shelve.Shelf.close(self.disk_file)
                 self.CurrentRecordsStore.clear()
-            self.disk_file = \
-            shelve.open(os.path.basename(dialog.get_filename()), writeback = True)
+            self.disk_file = shelve.open(dialog.get_filename(), writeback = True)
 # First, retrieve the 'names' element of the CurrentDataStore
-            self.CurrentRecordsStore.names = self.disk_file['names']
+            self.CurrentRecordsStore.names = self.disk_file["names"]
 # Now read the record data row-by-row into the CurrentDataStor's 'store' section
-            for row in self.disk_file['store']:
+            for row in self.disk_file["store"]:
                 self.CurrentRecordsStore.append(row) #pylint:disable-msg = E1103
                 self.disk_file.sync()
 # Change the window title to reflect the file we're now using.
@@ -429,52 +428,51 @@ class MyData:
         elif response == Gtk.ResponseType.CANCEL:
             dialog.destroy()
     
-    def on_save_menu_item_activated(self, widget):
-# First, open a FileChooser dialog in OPEN mode.
-        dialog = Gtk.FileChooserDialog("Open File", self.window, \
-                                       Gtk.FileChooserAction.OPEN, \
-                                       (Gtk.STOCK_CANCEL, \
-                                        Gtk.ResponseType.CANCEL, \
-                                        Gtk.STOCK_OPEN, Gtk.ResponseType.OK))
-        dialog.set_modal(True)
-        dialog.set_local_only(True)
-        dat_filter = Gtk.FileFilter()
-        dat_filter.set_name(".dat files")
-        dat_filter.add_pattern("*.dat")
-        dialog.add_filter(dat_filter)
-        all_filter = Gtk.FileFilter()
-        all_filter.set_name("All files")
-        all_filter.add_pattern("*.*")
-        dialog.add_filter(all_filter)
-        response = dialog.run()
-        if response == Gtk.ResponseType.OK:
-# Before opening a file, close and file we presently have open and wipe
-# the ListStore..
-            if self.disk_file is not None:
-                shelve.Shelf.close(self.disk_file)
-                self.CurrentRecordsStore.clear()
-            self.disk_file = \
-            shelve.open(os.path.basename(dialog.get_filename()), writeback = True)
-# First, retrieve the 'names' element of the CurrentDataStore
-            self.CurrentRecordsStore.names = self.disk_file['names']
-# Now read the record data row-by-row into the CurrentDataStor's 'store' section
-            for row in self.disk_file['store']:
-                self.CurrentRecordsStore.append(row) #pylint:disable-msg = E1103
-                self.disk_file.sync()
-# Change the window title to reflect the file we're now using.
-            self.window.set_title(os.path.basename(dialog.get_filename()))
-            self.window.reshow_with_initial_size()
-            dialog.destroy()
-        elif response == Gtk.ResponseType.CANCEL:
-            dialog.destroy()
-    
-    def on_save_as_menu_item_activated(self, widget):
-        
-        dialog = Gtk.FileChooserDialog("Save File", self.window, \
+    def on_save_menu_item_activate(self, widget):
+# If we have a file open already, just update it.
+        if self.disk_file:
+            self.disk_file.sync()
+        else:
+            dialog = Gtk.FileChooserDialog("Save File", self.window, \
                                        Gtk.FileChooserAction.SAVE, \
                                        (Gtk.STOCK_CANCEL, \
                                         Gtk.ResponseType.CANCEL, \
                                         Gtk.STOCK_SAVE, Gtk.ResponseType.OK))
+            dialog.set_modal(True)
+            dialog.set_local_only(True)
+            dat_filter = Gtk.FileFilter()
+            dat_filter.set_name(".dat files")
+            dat_filter.add_pattern("*.dat")
+            dialog.add_filter(dat_filter)
+            all_filter = Gtk.FileFilter()
+            all_filter.set_name("All files")
+            all_filter.add_pattern("*.*")
+            dialog.add_filter(all_filter)
+            response = dialog.run()
+            if response == Gtk.ResponseType.OK:
+# In creating a new disk file, we need only append each row in the
+# CurrentRecordsStore to the newly-created 'store' key in the shelve file.
+# We're not concerned about ordering and sorting the data stores.
+                self.disk_file = shelve.open(dialog.get_filename(),\
+                                             writeback = True)
+                self.disk_file["names"] = self.CurrentRecordsStore.names
+                self.disk_file["store"] = []
+                for row in self.CurrentRecordsStore:
+                    self.disk_file["store"].append(row[:])
+                self.disk_file.sync()
+# We're now using a file, so the window title should reflect that.
+                self.window.set_title(os.path.basename(dialog.get_filename()))
+                dialog.destroy()
+            elif response == Gtk.ResponseType.CANCEL:
+                dialog.destroy()
+        
+    def on_save_as_menu_item_activate(self, widget):
+        
+        dialog = Gtk.FileChooserDialog("Save File As", self.window, \
+                                       Gtk.FileChooserAction.SAVE, \
+                                       (Gtk.STOCK_CANCEL, \
+                                        Gtk.ResponseType.CANCEL, \
+                                        Gtk.STOCK_SAVE_AS, Gtk.ResponseType.OK))
         dialog.set_modal(True)
         dialog.set_local_only(True)
         dialog.set_do_overwrite_confirmation(True)
@@ -488,22 +486,23 @@ class MyData:
         dialog.add_filter(all_filter)
         response = dialog.run()
         if response == Gtk.ResponseType.OK:
-# First, close the original file.
-            shelve.Shelf.close(self.disk_file)
-# Now open the new file and save the CurrentRecordsStore to it.
-            self.disk_file = shelve.open(dialog.get_filename(), writeback = True)
+# In creating a new disk file, we need only append each row in the
+# CurrentRecordsStore to the newly-created 'store' key in the shelve file.
+# We're not concerned about ordering and sorting the data stores.
+            self.disk_file = shelve.open(dialog.get_filename(),\
+                                        writeback = True)
             self.disk_file["names"] = self.CurrentRecordsStore.names
             self.disk_file["store"] = []
             for row in self.CurrentRecordsStore:
-                self.disk_file['store'].append(row[:])
+                self.disk_file["store"].append(row[:])
             self.disk_file.sync()
-# Change the window title to reflect the new file name.
+# We're now using a file, so the window title should reflect that.
             self.window.set_title(os.path.basename(dialog.get_filename()))
             dialog.destroy()
         elif response == Gtk.ResponseType.CANCEL:
             dialog.destroy()
     
-    def on_quit_menu_item_activated(self, widget):
+    def on_quit_menu_item_activate(self, widget):
         msg = Gtk.MessageDialog(self.window, Gtk.DialogFlags.MODAL, 
                                 Gtk.MessageType.QUESTION, 
                                 Gtk.ButtonsType.OK_CANCEL, 
@@ -514,12 +513,12 @@ class MyData:
 #           if self.disk_file is not None:
 # Close any disk file we have open.
 #               shelve.Shelf.close(self.disk_file)
-           Gtk.main_quit()
+            Gtk.main_quit()
         elif response == Gtk.ResponseType.CANCEL:
-           msg.destroy()
-           return
+            msg.destroy()
+            return
     
-    def on_cut_menu_item_activated(self, widget):
+    def on_cut_menu_item_activate(self, widget):
         msg = Gtk.MessageDialog(self.window, Gtk.DialogFlags.MODAL, \
                                 Gtk.MessageType.INFO, Gtk.ButtonsType.OK, \
                                 "Development Update")
@@ -528,7 +527,7 @@ class MyData:
         msg.run()
         msg.destroy()
     
-    def on_copy_menu_item_activated(self, widget):
+    def on_copy_menu_item_activate(self, widget):
         msg = Gtk.MessageDialog(self.window, Gtk.DialogFlags.MODAL, \
                                 Gtk.MessageType.INFO, Gtk.ButtonsType.OK, \
                                 "Development Update")
@@ -537,7 +536,7 @@ class MyData:
         msg.run()
         msg.destroy()
     
-    def on_paste_menu_item_activated(self, widget):
+    def on_paste_menu_item_activate(self, widget):
         msg = Gtk.MessageDialog(self.window, Gtk.DialogFlags.MODAL, 
                                 Gtk.MessageType.INFO, Gtk.ButtonsType.OK, 
                                 "Development Update")
@@ -546,7 +545,7 @@ class MyData:
         msg.run()
         msg.destroy()
     
-    def on_delete_menu_item_activated(self, widget):
+    def on_delete_menu_item_activate(self, widget):
         msg = Gtk.MessageDialog(self.window, Gtk.DialogFlags.MODAL, 
                                 Gtk.MessageType.INFO, Gtk.ButtonsType.OK, 
                                 "Development Update")
@@ -555,7 +554,7 @@ class MyData:
         msg.run()
         msg.destroy()
     
-    def on_about_menu_item_activated(self, widget):
+    def on_about_menu_item_activate(self, widget):
         authors = ["Darron C. Knutson", None]
         copyright_notice = "Copyright 2012, Darron C. Knutson"
         msg = Gtk.AboutDialog()
@@ -574,7 +573,7 @@ class MyData:
         msg.destroy()
         return
     
-    def on_instructions_menu_item_activated(self, widget):
+    def on_instructions_menu_item_activate(self, widget):
         instructions = "To start, either open a data file or create " + \
         "one by clicking the 'Add Record' button.\n" + \
         "All record fields are mandatory; Priority must be between 1 and 4, inclusive.\n" +\

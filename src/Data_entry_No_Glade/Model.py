@@ -17,7 +17,8 @@ def AddRecordDialog(recordsstore, fields = \
                     {'project':'', 'status': '', 'priority': 1.0, 'focus': None }):
         
 
-    record_dialog = Gtk.Dialog("Add a New Record", buttons = (Gtk.STOCK_OK, Gtk.ResponseType.OK, Gtk.STOCK_CANCEL, Gtk.ResponseType.CANCEL))
+    record_dialog = Gtk.Dialog("Add a New Record", buttons = (Gtk.STOCK_OK, Gtk.ResponseType.OK,\
+                                                               Gtk.STOCK_CANCEL, Gtk.ResponseType.CANCEL))
     record_dialog.set_modal(True)
     record_dialog.set_destroy_with_parent(True)
     vbox = record_dialog.get_content_area()
