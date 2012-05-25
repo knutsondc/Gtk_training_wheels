@@ -359,45 +359,43 @@ class MyData:
             dialog.destroy()
 
     def on_save_menu_item_activate(self, widget):
-# If we have a data file open already, just update it.        
-        if self.disk_file:
-            self.disk_file.sync()
-# If there isn't a file open, present a dialog for thte user to enter a name and
-# save the data in a shelve file.
-        else:
-            dialog = Gtk.FileChooserDialog("Save File", self.window, \
-                                       Gtk.FileChooserAction.SAVE, \
+# First, open a FileChooser dialog in OPEN mode.
+        dialog = Gtk.FileChooserDialog("Open File", self.window, \
+                                       Gtk.FileChooserAction.OPEN, \
                                        (Gtk.STOCK_CANCEL, \
                                         Gtk.ResponseType.CANCEL, \
-                                        Gtk.STOCK_SAVE, Gtk.ResponseType.OK))
-            dialog.set_modal(True)
-            dialog.set_local_only(True)
-            dialog.set_do_overwrite_confirmation(True)
-            dat_filter = Gtk.FileFilter()
-            dat_filter.set_name(".dat files")
-            dat_filter.add_pattern("*.dat")
-            dialog.add_filter(dat_filter)
-            all_filter = Gtk.FileFilter()
-            all_filter.set_name("All files")
-            all_filter.add_pattern("*.*")
-            dialog.add_filter(all_filter)
-            response = dialog.run()
-            if response == Gtk.ResponseType.OK:
-# in Creating a new disk file, we need only append each row in the
-# CurrentRecordsStore to the newly-created 'store' key in the shelve file. 
-# We're not concerned about ordering and sorting the data stores.
-                self.disk_file = shelve.open(dialog.get_filename(),\
-                                              writeback = True)
-                self.disk_file["names"] = self.CurrentRecordsStore.names
-                self.disk_file["store"] = []
-                for row in self.CurrentRecordsStore:
-                    self.disk_file['store'].append(row[:])
+                                        Gtk.STOCK_OPEN, Gtk.ResponseType.OK))
+        dialog.set_modal(True)
+        dialog.set_local_only(True)
+        dat_filter = Gtk.FileFilter()
+        dat_filter.set_name(".dat files")
+        dat_filter.add_pattern("*.dat")
+        dialog.add_filter(dat_filter)
+        all_filter = Gtk.FileFilter()
+        all_filter.set_name("All files")
+        all_filter.add_pattern("*.*")
+        dialog.add_filter(all_filter)
+        response = dialog.run()
+        if response == Gtk.ResponseType.OK:
+# Before opening a file, close and file we presently have open and wipe
+# the ListStore..
+            if self.disk_file is not None:
+                shelve.Shelf.close(self.disk_file)
+                self.CurrentRecordsStore.clear()
+            self.disk_file = \
+            shelve.open(os.path.basename(dialog.get_filename()), writeback = True)
+# First, retrieve the 'names' element of the CurrentDataStore
+            self.CurrentRecordsStore.names = self.disk_file['names']
+# Now read the record data row-by-row into the CurrentDataStor's 'store' section
+            for row in self.disk_file['store']:
+                self.CurrentRecordsStore.append(row) #pylint:disable-msg = E1103
                 self.disk_file.sync()
-# We're now using a file, so the window title should reflect that.
-                self.window.set_title(os.path.basename(dialog.get_filename()))
-                dialog.destroy()
-            elif response == Gtk.ResponseType.CANCEL:
-                dialog.destroy()
+# Change the window title to reflect the file we're now using.
+            self.window.set_title(os.path.basename(dialog.get_filename()))
+            self.window.reshow_with_initial_size()
+            dialog.destroy()
+        elif response == Gtk.ResponseType.CANCEL:
+            dialog.destroy()
         
     def on_save_as_menu_item_activate(self, widget):
         
