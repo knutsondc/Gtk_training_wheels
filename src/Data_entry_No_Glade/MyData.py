@@ -20,20 +20,26 @@ class MyData:
         self.window.add(box)
         win_lab = Gtk.Label("Gtk Data Entry and Display Demo.")
         box.pack_start(win_lab, False, True, 0)
-        
+# Set up menu system - Menu Bar -> MenuItems (top level menu labels) -> Menus (these just
+# serve to make the individual menu items drop down) -> menuItems.        
         menu_bar = Gtk.MenuBar()
         box.pack_start(menu_bar, False, False, 0)
         menu_bar.set_pack_direction(Gtk.PackDirection.LTR)
         menu_bar.set_visible(True)
-        
+# Mnemonics set Letter underlined in title as hot-key for that menu.        
         file_menu_item = Gtk.MenuItem.new_with_mnemonic("_File")
         file_menu_item.show()
         menu_bar.add(file_menu_item)
+# Set connection between the MenuBar MenuItem and the corresponding Menu
+# that isn't visible, but causes the items appearing below this MenuBar
+# MenuItem when clicked.
         filemenu = Gtk.Menu()
         file_menu_item.set_submenu(filemenu)
+# Gtk stock images can be invoked for ImageMenuItems.
         new_menu_item = Gtk.ImageMenuItem.new_with_mnemonic("gtk-new")
         new_menu_item.set_use_stock(True)
         new_menu_item.set_always_show_image(True)
+# Connect MenuItem to relevant callback method.
         new_menu_item.connect("activate", self.on_new_menu_item_activate)
         filemenu.add(new_menu_item)
         open_menu_item = Gtk.ImageMenuItem.new_with_mnemonic("gtk-open")
@@ -100,22 +106,21 @@ class MyData:
         instructions_menu_item.set_always_show_image(True)
         instructions_menu_item.connect("activate", self.on_instructions_menu_item_activate)
         helpmenu.add(instructions_menu_item)
-        
+#Set up treeview and its connection to the data ListStore        
         self.treeview = Gtk.TreeView()
         self.treeview.set_grid_lines(Gtk.TreeViewGridLines.BOTH)
         self.selection = self.treeview.get_selection()
         self.selection.set_mode(Gtk.SelectionMode.MULTIPLE)
         self.selection.connect("changed", self.on_selection_changed)
-        
-        self.adjustment = Gtk.Adjustment(1.0, 1.0, 4.0, 1.0, 4.0, 0.0)
-        
         self.paths_selected = None
+        self.adjustment = Gtk.Adjustment(1.0, 1.0, 4.0, 1.0, 4.0, 0.0)
+# Set up the modified ListStore and connect the TreeView to it.        
         types = [GObject.TYPE_STRING, GObject.TYPE_STRING, GObject.TYPE_INT]
         names = ["Project", "Status", "Priority"]
         self.CurrentRecordsStore = RecordsStore(types, names)
         self.treeview.set_model(self.CurrentRecordsStore)
         box.pack_start(self.treeview, True, True, 0)
-        
+# Set up buttons for adding and deleting records.        
         button_box = Gtk.Box(homogeneous = True, orientation = Gtk.Orientation.HORIZONTAL)
         box.pack_start(button_box, False, False, 0)
         add_record_button = Gtk.Button("_Add Record")
@@ -123,7 +128,6 @@ class MyData:
         add_record_button.set_focus_on_click(True)
         add_record_button.set_can_focus(True)
         add_record_button.set_can_default(True)
-#        add_record_button.set_has_default(True)
         add_record_button.set_receives_default(True)
         add_record_button.connect("clicked", self.on_add_button_clicked)
         button_box.pack_start(add_record_button, False, False, 0)
@@ -155,8 +159,7 @@ class MyData:
                 
                 renderer[i].set_property("adjustment", self.adjustment)
                 
-# Glade doesn't handle anything about TreeViewColumns or CellRenderers, so we 
-# must.The Priority column shouldn't expand, so we set that behavior here, too.
+# The Priority column shouldn't expand, so we set that behavior here, too.
                 expand = False
                 
 # All the other columns receive text and need to expand.
@@ -241,7 +244,7 @@ class MyData:
         if record == None:
             return
 # Check the proposed new record to see if the data are valid - non-empty strings
-# for the "Project and Status columns and an integer between 1 and 4 for Priority.
+# for the Project and Status columns and an integer between 1 and 4 for Priority.
 # If there are errors, we again call the Add Record dialog, but with the values,
 # if any, the user supplied as the default values and the cursor set in the first
 # data entry field that caused the error check to fail.
@@ -266,6 +269,7 @@ class MyData:
             self.CurrentRecordsStore.append(row) # pylint: disable-msg = E1103
             if self.disk_file is not None:
                 self.disk_file["store"].append(row)
+# Now set the default values back to blanks for next record entry.
             record['project'] = ''
             record['status'] = ''
             record['priority'] = 1.0
@@ -273,7 +277,7 @@ class MyData:
             
     def on_records_edited(self, widget, path, text):
         
-# The "path"parameter emitted with the signal contains the cell's row number 
+# The "path" parameter emitted with the signal contains the cell's row number 
 # that produced the signal.The widget parameter is the CellRenderer that
 # produced the "edited" signal; its column number is carried in the "column
 # number" key we associated with it earlier with the set_data() method. We 
@@ -309,7 +313,7 @@ class MyData:
 
 
         if self.ErrorCheck(col_num, text):         
-            self.treeview.set_cursor_on_cell(self.treeiter[0], \
+            self.treeview.set_cursor_on_cell(self.paths_selected[0], \
                                              widget.get_data("column_obj"), \
                                              widget, True)
             self.treeview.grab_focus()

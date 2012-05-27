@@ -35,7 +35,7 @@ class MyData:
         self.adjustment = Gtk.Adjustment(1.0, 1.0, 4.0, 1.0, 4.0, 0.0)
         
 # Make sure that that reference to selected records is empty at program start
-        self.treeiter = None
+        self.paths_selected = None
         
 # Call constructor of subclassed ListStore that adds list of names of columns
 # in the as another member variable of the ListStore object.
@@ -228,7 +228,7 @@ class MyData:
 
 
         if self.ErrorCheck(col_num, text):         
-            self.treeview.set_cursor_on_cell(self.treeiter[0], \
+            self.treeview.set_cursor_on_cell(self.paths_selected[0], \
                                              widget.get_data("column_obj"), \
                                              widget, True)
             self.treeview.grab_focus()
@@ -248,23 +248,28 @@ class MyData:
 
     def on_delete_button_clicked(self, widget): # pylint: disable-msg = W0613
               
-# Iterate over a list of pointers to the rows in the TreeView the user has
-# selected and, after checking to see that each pointer actually points to a
-# row of data, delete the corresponding data record in the ListStore. This has
-# to be done in two steps to ensure that we don't try to delete data using an
-# iter that doesn't point to anything. We can directly use the TreePath rows
-# that the selection's constituent iters point to, but we must perform a
-# two-part cast on them to obtain the integer indices needed to deal with any
-# shelve disk file that's open. Again, we sync() the disk file immediately to
-# ensure all deletions are completed on the disk file.
-        for i in [self.CurrentRecordsStore.get_iter(row)\
-                   for row in self.treeiter]:# pylint: disable-msg = E1103
+# Iterate over the list of rows (paths) in the TreeView the user has
+# selected, collect a list of iters pointing to those rows and use the
+# iters to delete the selected rows in the ListStore, but only after
+# checking to see that each iter still actually points to a row of data
+# after earlier deletions. To maintain the one-to-one correspondence of 
+# the ListStore rows and the disk file rows employed in this simple
+# "push the ListStore to disk" approach to file management, the existing
+# contents of the disk file are erased and the newly-shortened ListStore
+# is written in its entirety to the same disk file. Again, we sync() 
+# the disk file immediately to ensure all deletions are completed on
+# the disk file.
+            
+        for i in [self.CurrentRecordsStore.get_iter(row)for row in self.paths_selected]:
             if i is not None:
-                self.CurrentRecordsStore.remove(i) # pylint: disable-msg = E1103
-                if self.disk_file is not None:
-                    del self.disk_file['store'][int(str(row))]
-                    self.disk_file.sync()
-                
+                self.CurrentRecordsStore.remove(i)
+            
+        if self.disk_file is not None:
+            self.disk_file['store'] = []
+            for row in self.CurrentRecordsStore:
+                self.disk_file["store"].append(row[:])
+            self.disk_file.sync()          
+    
 # Shrink the window down to only the size needed to display the remaining
 # records. The method invoked below hides the window and reopens it to the size
 # needed to contain the visible widgets now contained in it, just as when a
@@ -277,7 +282,7 @@ class MyData:
 # The TreeViewSelection contains references to the rows in the TreeView the
 # user has selected and the ListStore from which the data contained in those
 # rows was taken. Note that this code is for multiple selection.
-        self.CurrentRecordsStore, self.treeiter = self.selection.get_selected_rows()
+        self.CurrentRecordsStore, self.paths_selected = self.selection.get_selected_rows()
 
 # This method commented out after learning that Gtk apparently takes care of
 # listening for clicks on column headers for sorting.
