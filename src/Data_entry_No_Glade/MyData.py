@@ -109,7 +109,7 @@ class MyData:
         
         self.adjustment = Gtk.Adjustment(1.0, 1.0, 4.0, 1.0, 4.0, 0.0)
         
-        self.treeiter = None
+        self.paths_selected = None
         types = [GObject.TYPE_STRING, GObject.TYPE_STRING, GObject.TYPE_INT]
         names = ["Project", "Status", "Priority"]
         self.CurrentRecordsStore = RecordsStore(types, names)
@@ -329,23 +329,28 @@ class MyData:
             
     def on_delete_button_clicked(self, widget): # pylint: disable-msg = W0613
               
-# Iterate over a list of pointers to the rows in the TreeView the user has
-# selected and, after checking to see that each pointer actually points to a
-# row of data, delete the corresponding data record in the ListStore. This has
-# to be done in two steps to ensure that we don't try to delete data using an
-# iter that doesn't point to anything. We can directly use the TreePath rows
-# that the selection's constituent iters point to, but we must perform a
-# two-part cast on them to obtain the integer indices needed to deal with any
-# shelve disk file that's open. Again, we sync() the disk file immediately to
-# ensure all deletions are completed on the disk file.
-        for i in [self.CurrentRecordsStore.get_iter(row)\
-                   for row in self.treeiter]:# pylint: disable-msg = E1103
+# Iterate over the list of rows (paths) in the TreeView the user has
+# selected, collect a list of iters pointing to those rows and use the
+# iters to delete the selected rows in the ListStore, but only after
+# checking to see that each iter still actually points to a row of data
+# after earlier deletions. To maintain the one-to-one correspondence of 
+# the ListStore rows and the disk file rows employed in this simple
+# "push the ListStore to disk" approach to file management, the existing
+# contents of the disk file are erased and the newly-shortened ListStore
+# is written in its entirety to the same disk file. Again, we sync() 
+# the disk file immediately to ensure all deletions are completed on
+# the disk file.
+            
+        for i in [self.CurrentRecordsStore.get_iter(row)for row in self.paths_selected]:
             if i is not None:
-                self.CurrentRecordsStore.remove(i) # pylint: disable-msg = E1103
-                if self.disk_file is not None:
-                    del self.disk_file['store'][int(str(row))]
-                    self.disk_file.sync()
-                
+                self.CurrentRecordsStore.remove(i)
+            
+        if self.disk_file is not None:
+            self.disk_file['store'] = []
+            for row in self.CurrentRecordsStore:
+                self.disk_file["store"].append(row[:])
+            self.disk_file.sync()          
+    
 # Shrink the window down to only the size needed to display the remaining
 # records. The method invoked below hides the window and reopens it to the size
 # needed to contain the visible widgets now contained in it, just as when a
@@ -358,7 +363,7 @@ class MyData:
 # The TreeViewSelection contains references to the rows in the TreeView the
 # user has selected and the ListStore from which the data contained in those
 # rows was taken. Note that this code is for multiple selection.
-        self.CurrentRecordsStore, self.treeiter = self.selection.get_selected_rows()
+        self.CurrentRecordsStore, self.paths_selected = self.selection.get_selected_rows()
 
 
     def on_mouse_button_press_event(self, treeview, event):
@@ -459,7 +464,7 @@ class MyData:
                                              writeback = True)
                 self.disk_file["names"] = self.CurrentRecordsStore.names
                 self.disk_file["store"] = []
-                for row in self.CurrentRecordsStore:
+                for row in self.CurrentRecordsStore["store"]:
                     self.disk_file["store"].append(row[:])
                 self.disk_file.sync()
 # We're now using a file, so the window title should reflect that.
