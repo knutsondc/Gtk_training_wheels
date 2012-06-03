@@ -40,7 +40,6 @@ class MyData:
 # Call constructor of subclassed ListStore that adds list of names of columns
 # in the as another member variable of the ListStore object.
         self.disk_file = None        
-# Call method for constructing the TreeView used to display the data.
         
         builder.connect_signals(self)
         
@@ -493,13 +492,7 @@ class MyData:
         msg.destroy()
         
     def on_delete_menu_item_activate(self, widget):
-        msg = Gtk.MessageDialog(self.window, Gtk.DialogFlags.MODAL, 
-                                Gtk.MessageType.INFO, Gtk.ButtonsType.OK, 
-                                "Development Update")
-        msg.format_secondary_text\
-            ("Sorry - Edit menu 'Delete' not yet implemented.")
-        msg.run()
-        msg.destroy()
+        self.on_delete_button_clicked(self.selection)
         
     def on_about_menu_item_activate(self, widget):
         authors = ["Darron C. Knutson", None]
@@ -521,11 +514,12 @@ class MyData:
         return
         
     def on_instructions_menu_item_activate(self, widget):
-        instructions = "To start, either open a data file or create " + \
-        "one by clicking the 'Add Record' button.\n" + \
-        "All record fields are mandatory; Priority must be between 1 and 4, inclusive.\n" + \
-        "To delete records, select them with the mouse and click 'Delete Records'.\n" + \
-        "Double click on data fields to edit them and hit Enter or Tab to save."
+        instructions =  "To start, either open a data file or create one by clicking 'Add Record.'\n"\
+                        "All record fields are mandatory; Priority must be between 1 and 4,\n" +\
+                        "inclusive. Select records with the mouse and click 'Delete Records'\n" +\
+                        "or select the 'Delete' menu item to remove them. Double click on\n" +\
+                        "data fields to edit them; hit Enter or Tab to save the edited record.\n" +\
+                        "Use the 'Save' or 'Save As' menuitems to save your entries to a file."
         
         msg = Gtk.MessageDialog(self.window, Gtk.DialogFlags.MODAL, \
                                 Gtk.MessageType.INFO, Gtk.ButtonsType.OK,\

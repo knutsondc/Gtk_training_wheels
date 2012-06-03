@@ -65,6 +65,10 @@ class MyData:
         save_as_menu_item = Gtk.ImageMenuItem.new_from_stock(Gtk.STOCK_SAVE_AS,\
                                                               accel_group)
         save_as_menu_item.set_always_show_image(True)
+        sa_accel_key, sa_accel_mods = Gtk.accelerator_parse("<Control><Shift>s")
+        save_as_menu_item.add_accelerator("activate", accel_group, sa_accel_key, \
+                                          sa_accel_mods, Gtk.AccelFlags.VISIBLE)
+
         save_as_menu_item.connect("activate", \
                                   self.on_save_as_menu_item_activate)
         filemenu.add(save_as_menu_item)
@@ -101,6 +105,9 @@ class MyData:
                                                              accel_group)
         delete_menu_item.set_always_show_image(True)
         delete_menu_item.connect("activate", self.on_delete_menu_item_activate)
+        del_accel_key, del_accel_mods = Gtk.accelerator_parse("<Control>d")
+        delete_menu_item.add_accelerator("activate", accel_group, del_accel_key, \
+                                          del_accel_mods, Gtk.AccelFlags.VISIBLE)
         editmenu.add(delete_menu_item)
         
         help_menu_item = Gtk.ImageMenuItem.new_from_stock(Gtk.STOCK_HELP,\
@@ -112,6 +119,9 @@ class MyData:
         help_menu_item.set_submenu(helpmenu)
         about_menu_item = Gtk.ImageMenuItem.new_from_stock(Gtk.STOCK_ABOUT,\
                                                             accel_group)
+        about_accel_key, about_accel_mods = Gtk.accelerator_parse("<Control>a")
+        about_menu_item.add_accelerator("activate", accel_group, about_accel_key, \
+                                        about_accel_mods, Gtk.AccelFlags.VISIBLE)
         about_menu_item.set_always_show_image(True)
         about_menu_item.connect("activate", self.on_about_menu_item_activate)
         helpmenu.add(about_menu_item)
@@ -120,6 +130,10 @@ class MyData:
         instructions_menu_item.set_always_show_image(True)
         instructions_menu_item.connect("activate",\
                                         self.on_instructions_menu_item_activate)
+        inst_accel_key, inst_accel_mods = Gtk.accelerator_parse("<Control>i")
+        instructions_menu_item.add_accelerator("activate", accel_group, \
+                                               inst_accel_key, inst_accel_mods, \
+                                               Gtk.AccelFlags.VISIBLE)
         helpmenu.add(instructions_menu_item)
 #Set up treeview and its connection to the data ListStore        
         self.treeview = Gtk.TreeView()
@@ -486,7 +500,7 @@ class MyData:
                                              writeback = True)
                 self.disk_file["names"] = self.CurrentRecordsStore.names
                 self.disk_file["store"] = []
-                for row in self.CurrentRecordsStore["store"]:
+                for row in self.CurrentRecordsStore:
                     self.disk_file["store"].append(row[:])
                 self.disk_file.sync()
 # We're now using a file, so the window title should reflect that.
@@ -575,14 +589,9 @@ class MyData:
         msg.destroy()
     
     def on_delete_menu_item_activate(self, widget):
-        msg = Gtk.MessageDialog(self.window, Gtk.DialogFlags.MODAL, 
-                                Gtk.MessageType.INFO, Gtk.ButtonsType.OK, 
-                                "Development Update")
-        msg.format_secondary_text\
-            ("Sorry - Edit menu 'Delete' not yet implemented.")
-        msg.run()
-        msg.destroy()
-    
+
+        self.on_delete_button_clicked(self.selection)
+
     def on_about_menu_item_activate(self, widget):
         authors = ["Darron C. Knutson", None]
         copyright_notice = "Copyright 2012, Darron C. Knutson"
@@ -603,15 +612,16 @@ class MyData:
         return
     
     def on_instructions_menu_item_activate(self, widget):
-        instructions = "To start, either open a data file or create " + \
-        "one by clicking the 'Add Record' button.\n" + \
-        "All record fields are mandatory; Priority must be between 1 and 4, inclusive.\n" +\
-        "Select records with the mouse and click 'Delete Records'to remove them.\n" +  \
-        "Double click on data fields to edit them; hit Enter or Tab to save."
+        instructions =  "To start, either open a data file or create one by clicking 'Add Record.'\n"\
+                        "All record fields are mandatory; Priority must be between 1 and 4,\n" +\
+                        "inclusive. Select records with the mouse and click 'Delete Records'\n" +\
+                        "or select the 'Delete' menu item to remove them. Double click on\n" +\
+                        "data fields to edit them; hit Enter or Tab to save the edited record.\n" +\
+                        "Use the 'Save' or 'Save As' menuitems to save your entries to a file."
         
         msg = Gtk.MessageDialog(self.window, Gtk.DialogFlags.MODAL, \
-                                Gtk.MessageType.INFO, Gtk.ButtonsType.OK,\
-                                 instructions)
+                                Gtk.MessageType.INFO, Gtk.ButtonsType.OK, \
+                                instructions)
         msg.set_title("Program Instructions")
         msg.run()
         msg.hide()
