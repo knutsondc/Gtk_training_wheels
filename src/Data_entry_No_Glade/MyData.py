@@ -4,9 +4,9 @@
 from Model import RecordsStore, AddRecordDialog #@UnresolvedImport
 import os
 import shelve
-from gi.repository import Gtk       #pylint: disable-msg=E0611
-from gi.repository import GdkPixbuf #pylint: disable-msg=E0611
-from gi.repository import GObject   #pylint: disable-msg=E0611
+from gi.repository import Gtk       #pylint: disable-msg = E0611
+from gi.repository import GdkPixbuf #pylint: disable-msg = E0611
+from gi.repository import GObject   #pylint: disable-msg = E0611
 
 class MyData:
 
@@ -15,7 +15,7 @@ class MyData:
     
     def __init__(self):
         
-        """Define principal UI and logic elements """
+        """Set up principal UI elements """
         
         self.window = Gtk.Window()
         self.window.set_title("Unsaved Data File")
@@ -23,15 +23,22 @@ class MyData:
         self.window.set_position(Gtk.WindowPosition.MOUSE)
         self.window.set_accept_focus(True)
         self.window.connect("delete-event", self.on_window_delete)
-        box = Gtk.Box(orientation = Gtk.Orientation.VERTICAL)
-        self.window.add(box)
+        self.box = Gtk.Box(orientation = Gtk.Orientation.VERTICAL)
+        self.window.add(self.box)
         win_lab = Gtk.Label("Gtk Data Entry and Display Demo.")
-        box.pack_start(win_lab, False, True, 0)
-# Set up menu system - Menu Bar -> MenuItems (top level menu labels)
-# -> Menus (these just serve to make the individual menu items drop
-# down) -> menuItems.        
+        self.box.pack_start(win_lab, False, True, 0)
+        self.make_menus()
+        self.make_treeview()
+        self.make_buttons()
+        
+    def make_menus(self):
+        '''
+        Set up menu system - Menu Bar -> MenuItems (top level menu labels)
+        -> Menus (these just serve to make the individual menu items drop
+        down) -> menuItems.
+        '''      
         menu_bar = Gtk.MenuBar()
-        box.pack_start(menu_bar, False, False, 0)
+        self.box.pack_start(menu_bar, False, False, 0)
         menu_bar.set_pack_direction(Gtk.PackDirection.LTR)
         menu_bar.set_visible(True)
 # Set up accelerator group so key combo shortcuts for menus work.
@@ -67,16 +74,17 @@ class MyData:
         save_menu_item.set_always_show_image(True)
         save_menu_item.connect("activate", self.on_save_menu_item_activate)
         filemenu.add(save_menu_item)
-        save_as_menu_item = Gtk.ImageMenuItem.new_from_stock(Gtk.STOCK_SAVE_AS, \
-                                                            accel_group)
-        save_as_menu_item.set_always_show_image(True)
+        saveas_menu_item = Gtk.ImageMenuItem.new_from_stock(Gtk.STOCK_SAVE_AS, \
+                                                             accel_group)
+        saveas_menu_item.set_always_show_image(True)
         sa_accel_key, sa_accel_mods = Gtk.accelerator_parse("<Control><Shift>s")
-        save_as_menu_item.add_accelerator("activate", accel_group, sa_accel_key, \
-                                          sa_accel_mods, Gtk.AccelFlags.VISIBLE)
+        saveas_menu_item.add_accelerator("activate", accel_group, \
+                                          sa_accel_key, sa_accel_mods, \
+                                          Gtk.AccelFlags.VISIBLE)
 
-        save_as_menu_item.connect("activate", \
+        saveas_menu_item.connect("activate", \
                                   self.on_save_as_menu_item_activate)
-        filemenu.add(save_as_menu_item)
+        filemenu.add(saveas_menu_item)
         menu_separator_item = Gtk.SeparatorMenuItem()
         filemenu.add(menu_separator_item)
         quit_menu_item = Gtk.ImageMenuItem.new_from_stock(Gtk.STOCK_QUIT, \
@@ -112,8 +120,9 @@ class MyData:
         delete_menu_item.set_always_show_image(True)
         delete_menu_item.connect("activate", self.on_delete_menu_item_activate)
         del_accel_key, del_accel_mods = Gtk.accelerator_parse("<Control>d")
-        delete_menu_item.add_accelerator("activate", accel_group, del_accel_key, \
-                                          del_accel_mods, Gtk.AccelFlags.VISIBLE)
+        delete_menu_item.add_accelerator("activate", accel_group, \
+                                         del_accel_key, del_accel_mods, \
+                                         Gtk.AccelFlags.VISIBLE)
         editmenu.add(delete_menu_item)
         
         help_menu_item = Gtk.ImageMenuItem.new_from_stock(Gtk.STOCK_HELP, \
@@ -126,22 +135,26 @@ class MyData:
         about_menu_item = Gtk.ImageMenuItem.new_from_stock(Gtk.STOCK_ABOUT, \
                                                            accel_group)
         about_accel_key, about_accel_mods = Gtk.accelerator_parse("<Control>a")
-        about_menu_item.add_accelerator("activate", accel_group, about_accel_key, \
-                                        about_accel_mods, Gtk.AccelFlags.VISIBLE)
+        about_menu_item.add_accelerator("activate", accel_group, \
+                                        about_accel_key, about_accel_mods, \
+                                        Gtk.AccelFlags.VISIBLE)
         about_menu_item.set_always_show_image(True)
         about_menu_item.connect("activate", self.on_about_menu_item_activate)
         helpmenu.add(about_menu_item)
-        instructions_menu_item = Gtk.ImageMenuItem.new_from_stock(Gtk.STOCK_INFO, \
-                                                                  accel_group)
-        instructions_menu_item.set_always_show_image(True)
-        instructions_menu_item.connect("activate", \
+        inst_menu_item = Gtk.ImageMenuItem.new_from_stock(Gtk.STOCK_INFO, \
+                                                          None)
+        inst_menu_item.set_label("Instructions")
+        inst_menu_item.set_always_show_image(True)
+        inst_menu_item.connect("activate", \
                                        self.on_instructions_menu_item_activate)
         inst_accel_key, inst_accel_mods = Gtk.accelerator_parse("<Control>i")
-        instructions_menu_item.add_accelerator("activate", accel_group, \
-                                               inst_accel_key, inst_accel_mods, \
-                                               Gtk.AccelFlags.VISIBLE)
-        helpmenu.add(instructions_menu_item)
-#Set up treeview and its connection to the data ListStore        
+        inst_menu_item.add_accelerator("activate", accel_group, \
+                                       inst_accel_key, inst_accel_mods, \
+                                       Gtk.AccelFlags.VISIBLE)
+        helpmenu.add(inst_menu_item)
+        
+    def make_treeview(self):
+        '''Set up treeview and its connection to the data ListStore '''       
         self.treeview = Gtk.TreeView()
         self.treeview.set_grid_lines(Gtk.TreeViewGridLines.BOTH)
         self.selection = self.treeview.get_selection()
@@ -154,25 +167,7 @@ class MyData:
         names = ["Project", "Status", "Priority"]
         self.CurrentRecordsStore = RecordsStore(types, names)
         self.treeview.set_model(self.CurrentRecordsStore)
-        box.pack_start(self.treeview, True, True, 0)
-# Set up buttons for adding and deleting records.        
-        button_box = Gtk.Box(homogeneous = True, \
-                            orientation = Gtk.Orientation.HORIZONTAL)
-        box.pack_start(button_box, False, False, 0)
-        add_record_button = Gtk.Button("_Add Record")
-        add_record_button.set_use_underline(True)
-        add_record_button.set_focus_on_click(True)
-        add_record_button.set_can_focus(True)
-        add_record_button.set_can_default(True)
-        add_record_button.set_receives_default(True)
-        add_record_button.connect("clicked", self.on_add_button_clicked)
-        button_box.pack_start(add_record_button, False, False, 0)
-        
-        delete_record_button = Gtk.Button("_Delete Record(s)")
-        delete_record_button.set_use_underline(True)
-        delete_record_button.connect("clicked", self.on_delete_button_clicked)
-        button_box.pack_start(delete_record_button, False, False, 0)
-        
+        self.box.pack_start(self.treeview, True, True, 0)
         renderer = list()
         
 # Create a list of CellRenderers equal to the number of data columns in the
@@ -246,7 +241,24 @@ class MyData:
         renderer = list()
         self.disk_file = None
         
+    def make_buttons(self):
+        ''' Set up buttons for adding and deleting records.  '''      
+        button_box = Gtk.Box(homogeneous = True, \
+                            orientation = Gtk.Orientation.HORIZONTAL)
+        self.box.pack_start(button_box, False, False, 0)        
+        add_record_button = Gtk.Button("_Add Record")
+        add_record_button.set_use_underline(True)
+        add_record_button.set_focus_on_click(True)
+        add_record_button.set_can_focus(True)
+        add_record_button.set_can_default(True)
+        add_record_button.set_receives_default(True)
+        add_record_button.connect("clicked", self.on_add_button_clicked)
+        button_box.pack_start(add_record_button, False, False, 0)
         
+        delete_record_button = Gtk.Button("_Delete Record(s)")
+        delete_record_button.set_use_underline(True)
+        delete_record_button.connect("clicked", self.on_delete_button_clicked)
+        button_box.pack_start(delete_record_button, False, False, 0)
         
     def on_window_delete(self, widget, event): # pylint: disable-msg = w0613
         
@@ -666,12 +678,13 @@ class MyData:
         '''
         Tell the user how to use the program.
         '''
-        instructions =  "To start, either open a data file or create one by clicking 'Add Record.'\n"\
-                        "All record fields are mandatory; Priority must be between 1 and 4,\n" +\
-                        "inclusive. Select records with the mouse and click 'Delete Records'\n" +\
-                        "or select the 'Delete' menu item to remove them. Double click on\n" +\
-                        "data fields to edit them; hit Enter or Tab to save the edited record.\n" +\
-                        "Use the 'Save' or 'Save As' menuitems to save your entries to a file."
+        instructions = "To start, either open a data file or create one" + \
+        " by clicking 'Add Record.'\n All record fields are mandatory;" + \
+        "Priority must be between 1 and 4,\ninclusive. Select records" + \
+        " with the mouse and click 'Delete Records'\nor select the " + \
+        "'Delete' menu item to remove them. Double click on\ndata fields" + \
+        " to edit them; hit Enter or Tab to save the edited record.\nUse" + \
+        " the 'Save' or 'Save As' menuitems to save your entries to a file."
         
         msg = Gtk.MessageDialog(self.window, Gtk.DialogFlags.MODAL, \
                                 Gtk.MessageType.INFO, Gtk.ButtonsType.OK, \
