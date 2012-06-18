@@ -45,11 +45,11 @@ def AddRecordDialog(recordsstore, fields = \
     priority_spin.set_adjustment(priority_adjustment)
     hbox.add(priority_spin)
     if fields['focus'] == "project":
-        record_dialog.project_entry.grab_focus()
+        project_entry.grab_focus()
     elif fields['focus'] == "status":
-        record_dialog.status_entry.grab_focus()
+        status_entry.grab_focus()
     elif fields['focus'] == "priority":
-        record_dialog.priority_spin.grab_focus()
+        priority_spin.grab_focus()
     record_dialog.show_all()
     result = record_dialog.run()
     if result == Gtk.ResponseType.OK:

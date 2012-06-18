@@ -4,9 +4,9 @@
 from Model import RecordsStore, AddRecordDialog #@UnresolvedImport
 import os
 import shelve
-from gi.repository import Gtk       #pylint: disable-msg = E0611
-from gi.repository import GdkPixbuf #pylint: disable-msg = E0611
-from gi.repository import GObject   #pylint: disable-msg = E0611
+from gi.repository import Gtk       #@UnresolvedImport pylint: disable-msg=E0611
+from gi.repository import GdkPixbuf #@UnresolvedImport pylint: disable-msg=E0611
+from gi.repository import GObject   #@UnresolvedImport pylint: disable-msg=E0611
 
 class MyData:
 
@@ -18,7 +18,7 @@ class MyData:
         """Set up principal UI elements """
         
         self.window = Gtk.Window()
-        self.window.set_title("Unsaved Data File")
+        self.window.set_title("Unsaved Data")
         self.window.set_resizable(True)
         self.window.set_position(Gtk.WindowPosition.MOUSE)
         self.window.set_accept_focus(True)
@@ -28,6 +28,9 @@ class MyData:
         win_lab = Gtk.Label("Gtk Data Entry and Display Demo.")
         self.box.pack_start(win_lab, False, True, 0)
         self.make_menus()
+        self.treeview = Gtk.TreeView()
+        self.selection = self.treeview.get_selection()
+        self.adjustment = Gtk.Adjustment(1.0, 1.0, 4.0, 1.0, 4.0, 0.0)
         self.make_treeview()
         self.make_buttons()
         
@@ -45,7 +48,7 @@ class MyData:
         accel_group = Gtk.AccelGroup()
         self.window.add_accel_group(accel_group)
 # Mnemonics set Letter underlined in title as hot-key for that menu.        
-        file_menu_item = Gtk.ImageMenuItem.new_from_stock(Gtk.STOCK_FILE, \
+        file_menu_item = Gtk.ImageMenuItem.new_from_stock(Gtk.STOCK_FILE,
                                                           accel_group)
         file_menu_item.set_always_show_image(True)
         file_menu_item.set_use_underline(True)
@@ -58,110 +61,78 @@ class MyData:
         filemenu = Gtk.Menu()
         file_menu_item.set_submenu(filemenu)
 # Gtk stock images can be invoked for ImageMenuItems.
-        new_menu_item = Gtk.ImageMenuItem.new_from_stock(Gtk.STOCK_NEW, \
+        new_menu_item = Gtk.ImageMenuItem.new_from_stock(Gtk.STOCK_NEW,
                                                         accel_group)
         new_menu_item.set_always_show_image(True)
 # Connect MenuItem to relevant callback method.
         new_menu_item.connect("activate", self.on_new_menu_item_activate)
         filemenu.add(new_menu_item)
-        open_menu_item = Gtk.ImageMenuItem.new_from_stock(Gtk.STOCK_OPEN, \
+        open_menu_item = Gtk.ImageMenuItem.new_from_stock(Gtk.STOCK_OPEN,
                                                           accel_group)
         open_menu_item.set_always_show_image(True)
         open_menu_item.connect("activate", self.on_open_menu_item_activate)
         filemenu.add(open_menu_item)
-        save_menu_item = Gtk.ImageMenuItem.new_from_stock(Gtk.STOCK_SAVE, \
+        save_menu_item = Gtk.ImageMenuItem.new_from_stock(Gtk.STOCK_SAVE,
                                                           accel_group)
         save_menu_item.set_always_show_image(True)
         save_menu_item.connect("activate", self.on_save_menu_item_activate)
         filemenu.add(save_menu_item)
-        saveas_menu_item = Gtk.ImageMenuItem.new_from_stock(Gtk.STOCK_SAVE_AS, \
+        saveas_menu_item = Gtk.ImageMenuItem.new_from_stock(Gtk.STOCK_SAVE_AS,
                                                              accel_group)
         saveas_menu_item.set_always_show_image(True)
         sa_accel_key, sa_accel_mods = Gtk.accelerator_parse("<Control><Shift>s")
-        saveas_menu_item.add_accelerator("activate", accel_group, \
-                                          sa_accel_key, sa_accel_mods, \
+        saveas_menu_item.add_accelerator("activate", accel_group,
+                                          sa_accel_key, sa_accel_mods,
                                           Gtk.AccelFlags.VISIBLE)
 
-        saveas_menu_item.connect("activate", \
+        saveas_menu_item.connect("activate",
                                   self.on_save_as_menu_item_activate)
         filemenu.add(saveas_menu_item)
         menu_separator_item = Gtk.SeparatorMenuItem()
         filemenu.add(menu_separator_item)
-        quit_menu_item = Gtk.ImageMenuItem.new_from_stock(Gtk.STOCK_QUIT, \
+        quit_menu_item = Gtk.ImageMenuItem.new_from_stock(Gtk.STOCK_QUIT,
                                                           accel_group)
         quit_menu_item.set_always_show_image(True)
         quit_menu_item.connect("activate", self.on_quit_menu_item_activate)
         filemenu.add(quit_menu_item)
+
+# Edit menu removed - the Gnome Desktop clipboard already supplies all the
+# intended functions.        
         
-        edit_menu_item = Gtk.ImageMenuItem.new_from_stock(Gtk.STOCK_EDIT, \
-                                                          accel_group)
-        edit_menu_item.set_always_show_image(True)
-        edit_menu_item.show()
-        menu_bar.add(edit_menu_item)
-        editmenu = Gtk.Menu()
-        edit_menu_item.set_submenu(editmenu)
-        cut_menu_item = Gtk.ImageMenuItem.new_from_stock(Gtk.STOCK_CUT, \
-                                                         accel_group)
-        cut_menu_item.set_always_show_image(True)
-        cut_menu_item.connect("activate", self.on_cut_menu_item_activate)
-        editmenu.add(cut_menu_item)
-        copy_menu_item = Gtk.ImageMenuItem.new_from_stock(Gtk.STOCK_COPY, \
-                                                          accel_group)
-        copy_menu_item.set_always_show_image(True)
-        copy_menu_item.connect("activate", self.on_copy_menu_item_activate)
-        editmenu.add(copy_menu_item)
-        paste_menu_item = Gtk.ImageMenuItem.new_from_stock(Gtk.STOCK_PASTE, \
-                                                           accel_group)
-        paste_menu_item.set_always_show_image(True)
-        paste_menu_item.connect("activate", self.on_paste_menu_item_activate)
-        editmenu.add(paste_menu_item)
-        delete_menu_item = Gtk.ImageMenuItem.new_from_stock(Gtk.STOCK_DELETE, \
-                                                            accel_group)
-        delete_menu_item.set_always_show_image(True)
-        delete_menu_item.connect("activate", self.on_delete_menu_item_activate)
-        del_accel_key, del_accel_mods = Gtk.accelerator_parse("<Control>d")
-        delete_menu_item.add_accelerator("activate", accel_group, \
-                                         del_accel_key, del_accel_mods, \
-                                         Gtk.AccelFlags.VISIBLE)
-        editmenu.add(delete_menu_item)
-        
-        help_menu_item = Gtk.ImageMenuItem.new_from_stock(Gtk.STOCK_HELP, \
+        help_menu_item = Gtk.ImageMenuItem.new_from_stock(Gtk.STOCK_HELP,
                                                           accel_group)
         help_menu_item.set_always_show_image(True)
         help_menu_item.show()
         menu_bar.add(help_menu_item)
         helpmenu = Gtk.Menu()
         help_menu_item.set_submenu(helpmenu)
-        about_menu_item = Gtk.ImageMenuItem.new_from_stock(Gtk.STOCK_ABOUT, \
+        about_menu_item = Gtk.ImageMenuItem.new_from_stock(Gtk.STOCK_ABOUT,
                                                            accel_group)
         about_accel_key, about_accel_mods = Gtk.accelerator_parse("<Control>a")
-        about_menu_item.add_accelerator("activate", accel_group, \
-                                        about_accel_key, about_accel_mods, \
+        about_menu_item.add_accelerator("activate", accel_group,
+                                        about_accel_key, about_accel_mods,
                                         Gtk.AccelFlags.VISIBLE)
         about_menu_item.set_always_show_image(True)
         about_menu_item.connect("activate", self.on_about_menu_item_activate)
         helpmenu.add(about_menu_item)
-        inst_menu_item = Gtk.ImageMenuItem.new_from_stock(Gtk.STOCK_INFO, \
+        inst_menu_item = Gtk.ImageMenuItem.new_from_stock(Gtk.STOCK_INFO,
                                                           None)
         inst_menu_item.set_label("Instructions")
         inst_menu_item.set_always_show_image(True)
-        inst_menu_item.connect("activate", \
+        inst_menu_item.connect("activate",
                                        self.on_instructions_menu_item_activate)
         inst_accel_key, inst_accel_mods = Gtk.accelerator_parse("<Control>i")
-        inst_menu_item.add_accelerator("activate", accel_group, \
-                                       inst_accel_key, inst_accel_mods, \
+        inst_menu_item.add_accelerator("activate", accel_group,
+                                       inst_accel_key, inst_accel_mods,
                                        Gtk.AccelFlags.VISIBLE)
         helpmenu.add(inst_menu_item)
         
     def make_treeview(self):
         '''Set up treeview and its connection to the data ListStore '''       
-        self.treeview = Gtk.TreeView()
         self.treeview.set_grid_lines(Gtk.TreeViewGridLines.BOTH)
-        self.selection = self.treeview.get_selection()
         self.selection.set_mode(Gtk.SelectionMode.MULTIPLE)
         self.selection.connect("changed", self.on_selection_changed)
         self.paths_selected = None
-        self.adjustment = Gtk.Adjustment(1.0, 1.0, 4.0, 1.0, 4.0, 0.0)
 # Set up the modified ListStore and connect the TreeView to it.        
         types = [GObject.TYPE_STRING, GObject.TYPE_STRING, GObject.TYPE_INT]
         names = ["Project", "Status", "Priority"]
@@ -208,8 +179,7 @@ class MyData:
 # and .get_data methods may be dropped from the next version of PyGtk/PyGObject,
 # though, so watch for whatever facility is offered to replace that part of the
 # API.           
-            
-            
+                        
             column = Gtk.TreeViewColumn(names[i], renderer[i], text = i)
             renderer[i].set_data("column_obj", column)
             renderer[i].set_data("column_number", i)
@@ -234,7 +204,7 @@ class MyData:
 # Catching the mouse button presses speeds cell selection - no need to click
 # once to select the treeview and another couple times to start editing the
 # content of a cell. 
-            self.treeview.connect("button-press-event", \
+            self.treeview.connect("button-press-event",
                                   self.on_mouse_button_press_event)
 
 # Empty list to hold list of CellRenderers allocated to the treeview columns.
@@ -243,7 +213,7 @@ class MyData:
         
     def make_buttons(self):
         ''' Set up buttons for adding and deleting records.  '''      
-        button_box = Gtk.Box(homogeneous = True, \
+        button_box = Gtk.Box(homogeneous = True,
                             orientation = Gtk.Orientation.HORIZONTAL)
         self.box.pack_start(button_box, False, False, 0)        
         add_record_button = Gtk.Button("_Add Record")
@@ -265,9 +235,9 @@ class MyData:
         """When the user clicks the 'close window' gadget. """
         
 # Throw up a dialog asking if the user really wants to quit.
-        msg = Gtk.MessageDialog(self.window, Gtk.DialogFlags.MODAL, \
-                                Gtk.MessageType.QUESTION, \
-                                Gtk.ButtonsType.OK_CANCEL, \
+        msg = Gtk.MessageDialog(self.window, Gtk.DialogFlags.MODAL,
+                                Gtk.MessageType.QUESTION,
+                                Gtk.ButtonsType.OK_CANCEL,
                                 "Are you SURE you want to quit?")
         msg.format_secondary_text("We were having SO much fun......")
         response = msg.run()
@@ -282,11 +252,10 @@ class MyData:
             msg.destroy()
             return True
         
-    def on_add_button_clicked(self, widget, fields = {'project':'', \
-                                                      'status': '', \
-                                                      'priority': 1.0, \
-                                                      'focus': None }):\
-                                                      # pylint: disable-msg = W0613
+    def on_add_button_clicked(self, widget, fields = {'project':'',
+                                                      'status': '',
+                                                      'priority': 1.0,
+                                                      'focus': None }):
         '''
         Method for adding records.
         '''                                        
@@ -322,7 +291,7 @@ class MyData:
 # new record to the end.
             row = [record['project'], record['status'], record['priority']]
             self.CurrentRecordsStore.append(row) # pylint: disable-msg = E1103
-            if self.disk_file is not None:
+            if self.disk_file:
                 self.disk_file["store"].append(row)
 # Now set the default values back to blanks for next record entry.
             record['project'] = ''
@@ -351,7 +320,6 @@ class MyData:
 # inclusive, so we need only cast it as an int - no bounds checking needed
 # here. .               
 
-
         if text.isdigit():
             text = int(text)
 
@@ -371,51 +339,71 @@ class MyData:
 
 
         if self.ErrorCheck(col_num, text):         
-            self.treeview.set_cursor_on_cell(self.paths_selected[0], \
-                                             widget.get_data("column_obj"), \
+            self.treeview.set_cursor_on_cell(self.paths_selected[0],
+                                             widget.get_data("column_obj"),
                                              widget, True)
             self.treeview.grab_focus()
             return
 
 # To store the edited data, we can use the path variable to specify the row 
 # for the ListStore, but NOT for the shelve disk file! For that, we need an
-# integer index. The path actually is nothing but a row number, but it is
-# <type: TreePath>, not an int and cannot be used directly. It also cannot
-# be cast directly as an int, but it CAN be cast as a str and only THEN
-# cast as the int that's needed. There must be a better way.... We sync()
-# the shelve file immediately, just to make sure all new data is written to
-# disk.     
+# integer index. Here, the path actually is nothing but a row number, but it
+# is a str, not an int and cannot be used directly. It can be cast as the int 
+# that's needed. We sync() the shelve file immediately, just to make sure all 
+# new data is written safely to disk.
+     
         self.CurrentRecordsStore[path][col_num] = text
-        if self.disk_file is not None:
-            self.disk_file["store"][int(str(path))][col_num] = text
+        if self.disk_file:
+            self.disk_file["store"][int(path)][col_num] = text
             self.disk_file.sync()
             
     def on_delete_button_clicked(self, widget): # pylint: disable-msg = W0613
         
         '''
         Iterate over the list of rows (paths) in the TreeView the user has
-        selected, collect a list of iters pointing to those rows and use the
-        iters to delete the selected rows in the ListStore, but only after
-        checking to see that each iter still actually points to a row of data
-        after earlier deletions. To maintain the one-to-one correspondence of 
-        the ListStore rows and the disk file rows employed in this simple
-        "push the ListStore to disk" approach to file management, the existing
-        contents of the disk file are erased and the newly-shortened ListStore
-        is written in its entirety to the same disk file. Again, we sync() 
-        the disk file immediately to ensure all deletions are completed on
-        the disk file.
+        selected, collect a list of TreeRowReferences that will point to
+        those rows even after other rows have been deleted from ListStore.
+        Check to see if each TreeRowReference still points to a valid row and
+        then use the TreeRowReferences to derive the current path of each
+        record selected and use that to derive the current row number of
+        each record selected for use as the index to delete the disk file
+        copy (if any) of the selected record and then delete the corres-
+        ponding record from the ListStore. The disk file must be modified
+        first because the relevant RowReference will point to None after
+        it's used to delete the ListStore record. Again, we sync() the
+        disk file immediately to ensure all deletions are written to the
+        disk file.
+        
+        Note that this could be done with iters on the ListStore - see
+        commented out code below -- but the disk file can be done practically
+        only using rows and paths. We'd have to convert the iters back to
+        paths, so why not just use paths in the first place?
         '''
-
-        for i in [self.CurrentRecordsStore.get_iter(row)\
-                  for row in self.paths_selected]: #pylint: disable-msg = E1103
-            if i is not None:
-                self.CurrentRecordsStore.remove(i)  #pylint: disable-msg = E1103
-            
-        if self.disk_file is not None:
-            self.disk_file['store'] = []
-            for row in self.CurrentRecordsStore:
-                self.disk_file["store"].append(row[:])
-            self.disk_file.sync()          
+        for row in [Gtk.TreeRowReference.new(self.CurrentRecordsStore, path)
+                     for path in self.paths_selected]:
+            if row.get_path():
+                '''check if the RowReference still points to a valid Path '''
+                if self.disk_file:
+                    del self.disk_file['store'][row.get_path().get_indices()[0]]
+                    '''
+                    Note that Gtk.TreePath.get_indices() returns a LIST of
+                    numbers describing the path. Here this should be a single 
+                    element list, but we need a simple integer as an index, so
+                    we take the single ELEMENT of the list as our index, not 
+                    the list itself. 
+                    '''
+                    self.disk_file.sync()
+                del self.CurrentRecordsStore[row.get_path().get_indices()[0]]
+                
+#        for i in [self.CurrentRecordsStore.get_iter(row)
+#         for row in self.paths_selected]: #pylint: disable-msg = E1103
+#            if i:
+#                if self.disk_file:                    
+#                    del self.disk_file["store"
+#                        ][self.CurrentRecordsStore.get_path(i).get_indices(
+#                        )[0]]
+#                    self.disk_file.sync()
+#                self.CurrentRecordsStore.remove(i)  #pylint: disable-msg = E1103
     
 # Shrink the window down to only the size needed to display the remaining
 # records. The method invoked below hides the window and reopens it to the size
@@ -447,8 +435,8 @@ class MyData:
             y = int(event.y)
             pathinfo = treeview.get_path_at_pos(x, y)
             if pathinfo is not None:
-                path, col, cellx, celly = pathinfo
-                treeview.set_cursor_on_cell(path, col, \
+                path, col, cellx, celly = pathinfo #@UnusedVariable
+                treeview.set_cursor_on_cell(path, col,
                                             col.get_data("column_number"), True)
                 treeview.grab_focus()
             return [path, col, col.get_data("column_number"), False]
@@ -471,10 +459,10 @@ class MyData:
         '''
         Open an existing file. First, open a FileChooser dialog in OPEN mode.
         '''
-        dialog = Gtk.FileChooserDialog("Open File", self.window, \
-                                       Gtk.FileChooserAction.OPEN, \
-                                       (Gtk.STOCK_CANCEL, \
-                                        Gtk.ResponseType.CANCEL, \
+        dialog = Gtk.FileChooserDialog("Open File", self.window,
+                                       Gtk.FileChooserAction.OPEN,
+                                       (Gtk.STOCK_CANCEL,
+                                        Gtk.ResponseType.CANCEL,
                                         Gtk.STOCK_OPEN, Gtk.ResponseType.OK))
         dialog.set_modal(True)
         dialog.set_local_only(True)
@@ -493,7 +481,7 @@ class MyData:
             if self.disk_file is not None:
                 shelve.Shelf.close(self.disk_file)
                 self.CurrentRecordsStore.clear()    #pylint: disable-msg = E1103
-            self.disk_file = shelve.open(dialog.get_filename(), \
+            self.disk_file = shelve.open(dialog.get_filename(),
                                           writeback = True)
 # First, retrieve the 'names' element of the CurrentDataStore
             self.CurrentRecordsStore.names = self.disk_file["names"]
@@ -515,10 +503,10 @@ class MyData:
         if self.disk_file:
             self.disk_file.sync()
         else:
-            dialog = Gtk.FileChooserDialog("Save File", self.window, \
-                                       Gtk.FileChooserAction.SAVE, \
-                                       (Gtk.STOCK_CANCEL, \
-                                        Gtk.ResponseType.CANCEL, \
+            dialog = Gtk.FileChooserDialog("Save File", self.window,
+                                       Gtk.FileChooserAction.SAVE,
+                                       (Gtk.STOCK_CANCEL,
+                                        Gtk.ResponseType.CANCEL,
                                         Gtk.STOCK_SAVE, Gtk.ResponseType.OK))
             dialog.set_modal(True)
             dialog.set_local_only(True)
@@ -535,7 +523,7 @@ class MyData:
 # In creating a new disk file, we need only append each row in the
 # CurrentRecordsStore to the newly-created 'store' key in the shelve file.
 # We're not concerned about ordering and sorting the data stores.
-                self.disk_file = shelve.open(dialog.get_filename(), \
+                self.disk_file = shelve.open(dialog.get_filename(),
                                              writeback = True)
                 self.disk_file["names"] = self.CurrentRecordsStore.names
                 self.disk_file["store"] = []
@@ -554,10 +542,10 @@ class MyData:
         Save an existing file under a different name.
         '''
         
-        dialog = Gtk.FileChooserDialog("Save File As", self.window, \
-                                       Gtk.FileChooserAction.SAVE, \
-                                       (Gtk.STOCK_CANCEL, \
-                                        Gtk.ResponseType.CANCEL, \
+        dialog = Gtk.FileChooserDialog("Save File As", self.window,
+                                       Gtk.FileChooserAction.SAVE,
+                                       (Gtk.STOCK_CANCEL,
+                                        Gtk.ResponseType.CANCEL,
                                         Gtk.STOCK_SAVE_AS, Gtk.ResponseType.OK))
         dialog.set_modal(True)
         dialog.set_local_only(True)
@@ -575,7 +563,7 @@ class MyData:
 # In creating a new disk file, we need only append each row in the
 # CurrentRecordsStore to the newly-created 'store' key in the shelve file.
 # We're not concerned about ordering and sorting the data stores.
-            self.disk_file = shelve.open(dialog.get_filename(), \
+            self.disk_file = shelve.open(dialog.get_filename(),
                                         writeback = True)
             self.disk_file["names"] = self.CurrentRecordsStore.names
             self.disk_file["store"] = []
@@ -600,56 +588,16 @@ class MyData:
         msg.format_secondary_text("We were having SO much fun......")
         response = msg.run()
         if response == Gtk.ResponseType.OK:
-#           if self.disk_file is not None:
-# Close any disk file we have open.
-#               shelve.Shelf.close(self.disk_file)
+            if self.disk_file:
+            # Close any disk file we have open.
+                shelve.Shelf.close(self.disk_file)
             Gtk.main_quit()
         elif response == Gtk.ResponseType.CANCEL:
             msg.destroy()
             return
-    
-    def on_cut_menu_item_activate(self, widget):
-        '''
-        Delete from treeview and transfer to clipboard.
-        '''
-        msg = Gtk.MessageDialog(self.window, Gtk.DialogFlags.MODAL, \
-                                Gtk.MessageType.INFO, Gtk.ButtonsType.OK, \
-                                "Development Update")
-        msg.format_secondary_text\
-            ("Sorry - Edit menu 'Cut' not yet implemented.")
-        msg.run()
-        msg.destroy()
-    
-    def on_copy_menu_item_activate(self, widget):
-        '''
-        Copy from treeview to clipboard.
-        '''
-        msg = Gtk.MessageDialog(self.window, Gtk.DialogFlags.MODAL, \
-                                Gtk.MessageType.INFO, Gtk.ButtonsType.OK, \
-                                "Development Update")
-        msg.format_secondary_text\
-            ("Sorry - Edit menu 'Copy' not yet implemented.")
-        msg.run()
-        msg.destroy()
-    
-    def on_paste_menu_item_activate(self, widget):
-        '''
-        Transfer from clipboard to treeview.
-        '''
-        msg = Gtk.MessageDialog(self.window, Gtk.DialogFlags.MODAL, 
-                                Gtk.MessageType.INFO, Gtk.ButtonsType.OK, 
-                                "Development Update")
-        msg.format_secondary_text\
-            ("Sorry - Edit menu 'Paste' not yet implemented.")
-        msg.run()
-        msg.destroy()
-    
-    def on_delete_menu_item_activate(self, widget):
-        '''
-        Delete an entire record.
-        '''
 
-        self.on_delete_button_clicked(self.selection)
+# Edit menu removed - the Gnome Desktop clipboard already supplies all the
+# intended functions.
 
     def on_about_menu_item_activate(self, widget):
         '''
@@ -663,7 +611,7 @@ class MyData:
         msg.set_program_name("Gtk Training Wheels\nData Entry Demo")
         msg.set_version(".001 ... barely!")
         msg.set_copyright(copyright_notice)
-        msg.set_comments("A learning experience....\n" + "Thanks to Jens " + \
+        msg.set_comments("A learning experience....\n" + "Thanks to Jens " + 
                          "C. Knutson for all his help and inspiration.")
         msg.set_license_type(Gtk.License.GPL_3_0)
         msg.set_wrap_license(True)
@@ -686,8 +634,8 @@ class MyData:
         " to edit them; hit Enter or Tab to save the edited record.\nUse" + \
         " the 'Save' or 'Save As' menuitems to save your entries to a file."
         
-        msg = Gtk.MessageDialog(self.window, Gtk.DialogFlags.MODAL, \
-                                Gtk.MessageType.INFO, Gtk.ButtonsType.OK, \
+        msg = Gtk.MessageDialog(self.window, Gtk.DialogFlags.MODAL, 
+                                Gtk.MessageType.INFO, Gtk.ButtonsType.OK, 
                                 instructions)
         msg.set_title("Program Instructions")
         msg.run()
@@ -695,52 +643,50 @@ class MyData:
         
     def ErrorCheck(self, col_num, text):
         '''
-        Check proposed input for invalid data.
+        Check proposed input for invalid data. Return True if there's an error,
+        False if everything's good.
         '''
-        if ((col_num == 0) and (len(text) < 1)):
-            msg = Gtk.MessageDialog(self.window, Gtk.DialogFlags.MODAL, \
-                                    Gtk.MessageType.ERROR, Gtk.ButtonsType.OK, \
-                                    "Invalid or incomplete Project name.")
-            msg.set_title("Project Entry Error!")
-            msg.run()
-            msg.destroy()
-            return True
-        elif ((col_num == 1) and (len(text) < 1)):
-            msg = Gtk.MessageDialog(self.window, Gtk.DialogFlags.MODAL, \
-                              Gtk.MessageType.ERROR, Gtk.ButtonsType.OK, \
-                              "Invalid or incomplete Status description.")
-            msg.set_title("Status Entry Error!")
-            msg.run()
-            msg.destroy()
-            return True
-        
-# The SpinButton used for the Priority field should prevent entry of
-# out-of-bounds values here, but check anyway for the sake of completeness.
-
-        elif (col_num == 2) and ((not isinstance(text, int)) or\
-                                  ((text < 1) or (text > 4))):
-            msg = Gtk.MessageDialog\
-                (self.window, Gtk.DialogFlags.MODAL, \
-                Gtk.MessageType.ERROR, Gtk.ButtonsType.OK, \
-                "Priority value must be an integer between 1 and 4.")
-            msg.set_title("Priority Entry Error!")
-            msg.run()
-            msg.destroy()
-            return True
+        if self.CurrentRecordsStore.get_column_type( #pylint: disable-msg=E1103
+                    col_num) == GObject.TYPE_STRING:
+            '''If column calls for a string, it cannot be empty '''
+            if not text:
+                msg = Gtk.MessageDialog(self.window, Gtk.DialogFlags.MODAL,
+                                   Gtk.MessageType.ERROR, Gtk.ButtonsType.OK,
+                                   "Invalid or incomplete %s entry." % 
+                                   self.CurrentRecordsStore.names[col_num])
+                msg.set_title("%s Entry Error!" % self.CurrentRecordsStore.names[col_num])
+                msg.run()
+                msg.destroy()
+                return True
+            else:
+                return False
+        elif self.CurrentRecordsStore.get_column_type( #pylint: disable-msg=E1103
+                    col_num) == GObject.TYPE_INT:
+            '''
+            If column calls for a number, it must be between 1 and 4. The
+            Spinbutton should guarantee compliance, but we check here for
+            the sake of completeness.
+            '''
+            if ((not isinstance(text, int)) or ((text < 1) or (text > 4))):
+                msg = Gtk.MessageDialog(self.window, Gtk.DialogFlags.MODAL,
+                                        Gtk.MessageType.ERROR, Gtk.ButtonsType.OK,
+                                        "Priority value must be an integer between 1 and 4.")
+                msg.set_title("Priority Entry Error!")
+                msg.run()
+                msg.destroy()
+                return True
+            else:
+                return False
         else:
-            return False
+            msg = Gtk.MessageDialog(self.window, Gtk.DialogFlags.MODAL,
+                                        Gtk.MessageType.ERROR, Gtk.ButtonsType.OK,
+                                        "Unknown Data Type Entered.")
+            msg.set_title("Unknown Data Type Error!")
+            msg.run()
+            msg.destroy()
+            return True
         
 if __name__ == "__main__":
     win = MyData()
     win.window.show_all()
     Gtk.main()
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
