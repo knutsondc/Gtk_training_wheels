@@ -302,12 +302,13 @@ class MyData:
     def on_records_edited(self, widget, path, text):
         
         '''        
-        The "path" parameter emitted with the signal contains the cell's row number 
-        that produced the signal.The widget parameter is the CellRenderer that
-        produced the "edited" signal; its column number is carried in the "column
-        number" key we associated with it earlier with the set_data() method. We 
-        could get the column number from the widget's place in the list of renderers,
-        but the approach taken here is more generalized.
+        The "path" parameter emitted with the signal contains a str reference to
+        the row number of the cell that produced the signal.The widget parameter
+        is the CellRenderer that produced the "edited" signal; its column number
+        is carried in the "column number" key we associated with it earlier with
+        the set_data() method. We could get the column number from the widget's
+        place in the list of renderers,but the approach taken here is more
+        generalized.
     '''
 
         col_num = widget.get_data("column_number")
@@ -327,19 +328,18 @@ class MyData:
 # invalid values.If the updated record fails the error check, the 
 # on_records_edited method returns without changing the existing record; if
 # the error check is passed, the updated data field gets written to the
-# appropriate row and column in the ListStore. Strangely, using this method's
-# path parameter here crashes the program - Python complains it points to a
-# StructMeta instead of a Gtk.TreePath. The first element of the
-# TreeviewSelection (we're using multiple select here) points to the row
-# that's been selected, so we can use that instead. When the CellRenderers
-# were created, the column object to which each was attached was associated
-# with that CellRenderer using set_data(). We use Get_data now to find the
+# appropriate row and column in the ListStore. This method's path 
+# parameter is a str representation of a Gtk.TreePath, so we must use
+# that to get a 'real' TreePath object with the "from string" version of
+# the Gtk.TreePath constructor. When the CellRenderers were created, the
+# column object to which each was attached was associated with that
+# CellRenderer using set_data(). We use Get_data now to find the
 # column we need. Note that  set_data and get_data may be removed from Gtk
 # in the future and replaced with the ability to set_attr and get_attr.
 
 
         if self.ErrorCheck(col_num, text):         
-            self.treeview.set_cursor_on_cell(self.paths_selected[0],
+            self.treeview.set_cursor_on_cell(Gtk.TreePath.new_from_string(path),
                                              widget.get_data("column_obj"),
                                              widget, True)
             self.treeview.grab_focus()
