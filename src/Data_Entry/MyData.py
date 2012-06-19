@@ -560,50 +560,50 @@ class MyData:
         msg.run()
         msg.hide()
         
-        def ErrorCheck(self, col_num, text):
-            '''
-            Check proposed input for invalid data. Return True if there's an error,
-            False if everything's good.
-            '''
-            if self.CurrentRecordsStore.get_column_type( #pylint: disable-msg=E1103
-                    col_num) == GObject.TYPE_STRING:
-                '''If column calls for a string, it cannot be empty '''
-                if not text:
-                    msg = Gtk.MessageDialog(self.window, Gtk.DialogFlags.MODAL,
-                                   Gtk.MessageType.ERROR, Gtk.ButtonsType.OK,
-                                   "Invalid or incomplete %s entry." % 
-                                   self.CurrentRecordsStore.names[col_num])
-                    msg.set_title("%s Entry Error!" % self.CurrentRecordsStore.names[col_num])
-                    msg.run()
-                    msg.destroy()
-                    return True
-                else:
-                    return False
-            elif self.CurrentRecordsStore.get_column_type(#pylint: disable-msg=E1103
-                    col_num) == GObject.TYPE_INT:
-                '''
-                If column calls for a number, it must be between 1 and 4. The
-                Spinbutton and its adjustment should guarantee compliance, but
-                we check here for the sake of completeness.
-                '''
-                if ((not isinstance(text, int)) or ((text < 1) or (text > 4))):
-                    msg = Gtk.MessageDialog(self.window, Gtk.DialogFlags.MODAL,
-                        Gtk.MessageType.ERROR, Gtk.ButtonsType.OK,
-                        "Priority value must be an integer between 1 and 4.")
-                    msg.set_title("Priority Entry Error!")
-                    msg.run()
-                    msg.destroy()
-                    return True
-                else:
-                    return False
-            else:
+    def ErrorCheck(self, col_num, text):
+        '''
+        Check proposed input for invalid data. Return True if there's an error,
+        False if everything's good.
+        '''
+        if self.CurrentRecordsStore.get_column_type( #pylint: disable-msg=E1103
+                col_num) == GObject.TYPE_STRING:
+            '''If column calls for a string, it cannot be empty '''
+            if not text:
                 msg = Gtk.MessageDialog(self.window, Gtk.DialogFlags.MODAL,
-                                    Gtk.MessageType.ERROR, Gtk.ButtonsType.OK,
-                                    "Unknown Data Type Entered.")
-                msg.set_title("Unknown Data Type Error!")
+                                Gtk.MessageType.ERROR, Gtk.ButtonsType.OK,
+                                "Invalid or incomplete %s entry." % 
+                                self.CurrentRecordsStore.names[col_num])
+                msg.set_title("%s Entry Error!" % self.CurrentRecordsStore.names[col_num])
                 msg.run()
                 msg.destroy()
                 return True
+            else:
+                return False
+        elif self.CurrentRecordsStore.get_column_type(#pylint: disable-msg=E1103
+                col_num) == GObject.TYPE_INT:
+            '''
+            If column calls for a number, it must be between 1 and 4. The
+            Spinbutton and its adjustment should guarantee compliance, but
+            we check here for the sake of completeness.
+            '''
+            if ((not isinstance(text, int)) or ((text < 1) or (text > 4))):
+                msg = Gtk.MessageDialog(self.window, Gtk.DialogFlags.MODAL,
+                    Gtk.MessageType.ERROR, Gtk.ButtonsType.OK,
+                    "Priority value must be an integer between 1 and 4.")
+                msg.set_title("Priority Entry Error!")
+                msg.run()
+                msg.destroy()
+                return True
+            else:
+                return False
+        else:
+            msg = Gtk.MessageDialog(self.window, Gtk.DialogFlags.MODAL,
+                                Gtk.MessageType.ERROR, Gtk.ButtonsType.OK,
+                                "Unknown Data Type Entered.")
+            msg.set_title("Unknown Data Type Error!")
+            msg.run()
+            msg.destroy()
+            return True
 
 if __name__ == "__main__":
     win = MyData()
