@@ -30,7 +30,6 @@ class MyData:
         self.make_menus()
         self.treeview = Gtk.TreeView()
         self.selection = self.treeview.get_selection()
-        self.adjustment = Gtk.Adjustment(1.0, 1.0, 4.0, 1.0, 4.0, 0.0)
         self.make_treeview()
         self.make_buttons()
         
@@ -159,7 +158,8 @@ class MyData:
 # Attach the CellRendererSpin to the adjustment holding the data defining the
 # SpinButton's behavior.
                 
-                renderer[i].set_property("adjustment", self.adjustment)
+                renderer[i].set_property("adjustment", Gtk.Adjustment(
+                                        1.0, 1.0, 4.0, 1.0, 4.0, 0.0))
                 
 # The Priority column shouldn't expand, so we set that behavior here, too.
                 expand = False
@@ -386,25 +386,41 @@ class MyData:
                 if self.disk_file:
                     del self.disk_file['store'][row.get_path().get_indices()[0]]
                     '''
+                    The one-to-one relationship between the disk file version
+                    of the ListStore and the ListStore itself means we can use
+                    the TreePaths we derive from the RowReferences as indices to
+                    the disk_file['store'] data structure. We have to modify the
+                    disk file first because otherwise the RowReferences would get
+                    out of sync with the disk file representation of the
+                    ListStore - the one-to-one relationship gets broken.
+                    
                     Note that Gtk.TreePath.get_indices() returns a LIST of
                     numbers describing the path. Here this should be a single 
                     element list, but we need a simple integer as an index, so
                     we take the single ELEMENT of the list as our index, not 
-                    the list itself. 
+                    the list itself.
                     '''
                     self.disk_file.sync()
+                    '''
+                    Now that the record has been deleted from the disk_file,
+                    we can delete the record from the disk_store and restore
+                    the one-to-one relationship between the ListStore and the
+                    disk_file representation of it in disk_file['store'].
+                    '''
                 del self.CurrentRecordsStore[row.get_path().get_indices()[0]]
-                
-#        for i in [self.CurrentRecordsStore.get_iter(row)
-#         for row in self.paths_selected]: #pylint: disable-msg = E1103
-#            if i:
-#                if self.disk_file:                    
-#                    del self.disk_file["store"
-#                        ][self.CurrentRecordsStore.get_path(i).get_indices(
-#                        )[0]]
-#                    self.disk_file.sync()
-#                self.CurrentRecordsStore.remove(i)  #pylint: disable-msg = E1103
-    
+        '''
+        Delete method using iters on the ListStore:
+               
+        for i in [self.CurrentRecordsStore.get_iter(row)
+         for row in self.paths_selected]: #pylint: disable-msg = E1103
+            if i:
+                if self.disk_file:                    
+                    del self.disk_file["store"
+                        ][self.CurrentRecordsStore.get_path(i).get_indices(
+                        )[0]]
+                    self.disk_file.sync()
+                self.CurrentRecordsStore.remove(i) #pylint: disable-msg=E1103
+        '''
 # Shrink the window down to only the size needed to display the remaining
 # records. The method invoked below hides the window and reopens it to the size
 # needed to contain the visible widgets now contained in it, just as when a
@@ -660,17 +676,17 @@ class MyData:
                 return True
             else:
                 return False
-        elif self.CurrentRecordsStore.get_column_type( #pylint: disable-msg=E1103
+        elif self.CurrentRecordsStore.get_column_type(#pylint: disable-msg=E1103
                     col_num) == GObject.TYPE_INT:
             '''
             If column calls for a number, it must be between 1 and 4. The
-            Spinbutton should guarantee compliance, but we check here for
-            the sake of completeness.
+            Spinbutton and its adjustment should guarantee compliance, but
+            we check here for the sake of completeness.
             '''
             if ((not isinstance(text, int)) or ((text < 1) or (text > 4))):
                 msg = Gtk.MessageDialog(self.window, Gtk.DialogFlags.MODAL,
-                                        Gtk.MessageType.ERROR, Gtk.ButtonsType.OK,
-                                        "Priority value must be an integer between 1 and 4.")
+                        Gtk.MessageType.ERROR, Gtk.ButtonsType.OK,
+                        "Priority value must be an integer between 1 and 4.")
                 msg.set_title("Priority Entry Error!")
                 msg.run()
                 msg.destroy()
@@ -679,8 +695,8 @@ class MyData:
                 return False
         else:
             msg = Gtk.MessageDialog(self.window, Gtk.DialogFlags.MODAL,
-                                        Gtk.MessageType.ERROR, Gtk.ButtonsType.OK,
-                                        "Unknown Data Type Entered.")
+                                    Gtk.MessageType.ERROR, Gtk.ButtonsType.OK,
+                                    "Unknown Data Type Entered.")
             msg.set_title("Unknown Data Type Error!")
             msg.run()
             msg.destroy()
