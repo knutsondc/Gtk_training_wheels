@@ -1,6 +1,8 @@
-""" Main program control file for this toy project to demonstrate entry of data 
- records into a Gtk.ListStore, display the records and allow the user to edit
- and delete them. This version does not rely upon glade at all. """
+""" 
+Main program control file for this toy project to demonstrate entry of data 
+records into a Gtk.ListStore, display the records and allow the user to edit
+and delete them. This version does not rely upon glade at all.
+"""
 from Model import RecordsStore, AddRecordDialog #@UnresolvedImport
 import os
 import shelve
@@ -10,8 +12,10 @@ from gi.repository import GObject   #@UnresolvedImport pylint: disable-msg=E0611
 
 class MyData:
 
-    """ Main program class - defines elements of the principal 
-        program window. """ 
+    """ 
+    Main program class - defines elements of the principal 
+    program window.
+    """ 
     
     def __init__(self):
         
@@ -309,7 +313,7 @@ class MyData:
         the set_data() method. We could get the column number from the widget's
         place in the list of renderers,but the approach taken here is more
         generalized.
-    '''
+        '''
 
         col_num = widget.get_data("column_number")
 
@@ -368,9 +372,7 @@ class MyData:
         record selected and use that to derive the current row number of
         each record selected for use as the index to delete the disk file
         copy (if any) of the selected record and then delete the corres-
-        ponding record from the ListStore. The disk file must be modified
-        first because the relevant RowReference will point to None after
-        it's used to delete the ListStore record. Again, we sync() the
+        ponding record from the ListStore. Again, we sync() the
         disk file immediately to ensure all deletions are written to the
         disk file.
         
@@ -387,12 +389,19 @@ class MyData:
                     del self.disk_file['store'][row.get_path().get_indices()[0]]
                     '''
                     The one-to-one relationship between the disk file version
-                    of the ListStore and the ListStore itself means we can use
-                    the TreePaths we derive from the RowReferences as indices to
-                    the disk_file['store'] data structure. We have to modify the
-                    disk file first because otherwise the RowReferences would get
-                    out of sync with the disk file representation of the
-                    ListStore - the one-to-one relationship gets broken.
+                    of the ListStore and the ListStore itself and their simple
+                    two-dimensional layout means we can use the TreePaths we
+                    derive from the RowReferences, after converting them to
+                    simple integers, as indices to the disk_file['store'] data
+                    structure. The TreePaths contain a str representation of the
+                    row number in the ListStore of the records they point to.
+                    We have to modify the disk file first because otherwise the
+                    RowReferences would get out of sync with the disk file
+                    representation of the ListStore - the one-to-one
+                    relationship gets broken -- and the program either would 
+                    delete the wrong record or (more likely) crash trying to
+                    delete a non-existent row of the disk_File['store'] pointed
+                    to by an outdated TreePath..
                     
                     Note that Gtk.TreePath.get_indices() returns a LIST of
                     numbers describing the path. Here this should be a single 
@@ -464,7 +473,7 @@ class MyData:
         Change the disk_file to None so we won't try to write to alcose file!
         Change the window title to reflect we're now working on unsaved data.
         '''
-        if self.disk_file is not None:
+        if self.disk_file:
             shelve.Shelf.close(self.disk_file)
             self.disk_file = None
         self.CurrentRecordsStore.clear() #pylint: disable-msg=E1103
@@ -494,7 +503,7 @@ class MyData:
         if response == Gtk.ResponseType.OK:
 # Before opening a file, close and file we presently have open and wipe
 # the ListStore..
-            if self.disk_file is not None:
+            if self.disk_file:
                 shelve.Shelf.close(self.disk_file)
                 self.CurrentRecordsStore.clear()    #pylint: disable-msg = E1103
             self.disk_file = shelve.open(dialog.get_filename(),
@@ -523,7 +532,8 @@ class MyData:
                                        Gtk.FileChooserAction.SAVE,
                                        (Gtk.STOCK_CANCEL,
                                         Gtk.ResponseType.CANCEL,
-                                        Gtk.STOCK_SAVE, Gtk.ResponseType.OK))
+                                        Gtk.STOCK_SAVE, 
+                                        Gtk.ResponseType.OK))
             dialog.set_modal(True)
             dialog.set_local_only(True)
             dat_filter = Gtk.FileFilter()
@@ -595,7 +605,7 @@ class MyData:
     def on_quit_menu_item_activate(self, widget):
         
         '''
-        Exit the program.
+        Exit the program?
         '''
         msg = Gtk.MessageDialog(self.window, Gtk.DialogFlags.MODAL, 
                                 Gtk.MessageType.QUESTION, 
