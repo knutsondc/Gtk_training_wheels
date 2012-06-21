@@ -150,13 +150,16 @@ class MyData:
             msg.destroy()
             return True
     
-    def on_add_button_clicked(self, widget, 
-                              fields = {'project':'', 'status': '', 
-                                        'priority': 1.0, 'focus': None }):
-                                        # pylint: disable-msg = W0613
+    def on_add_button_clicked(self, widget, fields = None):
         '''
         Method for adding records.
         ''' 
+        if not fields:
+            fields = {'project':'',
+                      'status': '', 
+                      'priority': 1.0,
+                      'focus': None }
+        
                                         
 # We pass the ListStore we're using as a parameter to allow for eventual use
 # of multiple ListStores.
@@ -167,7 +170,7 @@ class MyData:
         if record == None:
             return
 # Check the proposed new record to see if the data are valid - non-empty strings
-# for the "Project and Status columns and an integer between 1 and 4 for Priority.
+# for the Project and Status columns and an integer from 1 to 4 for Priority.
 # If there are errors, we again call the Add Record dialog, but with the values,
 # if any, the user supplied as the default values and the cursor set in the first
 # data entry field that caused the error check to fail.

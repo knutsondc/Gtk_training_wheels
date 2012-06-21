@@ -14,8 +14,7 @@ class RecordsStore(Gtk.ListStore):
         Gtk.ListStore.__init__(self, *columns)
         self.names = names
         
-def AddRecordDialog(treeview, fields = \
-                    {'project':'', 'status': '', 'priority': 1.0, 'focus': None }):
+def AddRecordDialog(treeview, fields = None):
         
 # The UI for the dialog the user completes for each new record is defined in a glade
 # file.

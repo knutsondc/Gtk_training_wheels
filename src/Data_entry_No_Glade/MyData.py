@@ -256,10 +256,12 @@ class MyData:
             msg.destroy()
             return True
         
-    def on_add_button_clicked(self, widget, fields = {'project':'',
-                                                      'status': '',
-                                                      'priority': 1.0,
-                                                      'focus': None }):
+    def on_add_button_clicked(self, widget, fields = None):
+        if not fields:
+            fields = {'project':'',
+                      'status': '',
+                      'priority': 1.0,
+                      'focus': None }
         '''
         Method for adding records.
         '''                                        
@@ -298,10 +300,10 @@ class MyData:
             if self.disk_file:
                 self.disk_file["store"].append(row)
 # Now set the default values back to blanks for next record entry.
-            record['project'] = ''
-            record['status'] = ''
-            record['priority'] = 1.0
-            record['focus'] = None
+#            record['project'] = ''
+#            record['status'] = ''
+#            record['priority'] = 1.0
+#            record['focus'] = None
             
     def on_records_edited(self, widget, path, text):
         

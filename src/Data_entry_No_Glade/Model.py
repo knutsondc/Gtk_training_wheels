@@ -15,10 +15,8 @@ class RecordsStore(Gtk.ListStore):
         Gtk.ListStore.__init__(self, *columns)
         self.names = names
         
-def AddRecordDialog(recordsstore, fields = \
-                    {'project':'', 'status': '', 'priority': 1.0, 'focus': None }):
-        
-
+def AddRecordDialog(recordsstore, fields):
+    
     record_dialog = Gtk.Dialog("Add a New Record", buttons = (Gtk.STOCK_OK, Gtk.ResponseType.OK,\
                                                                Gtk.STOCK_CANCEL, Gtk.ResponseType.CANCEL))
     record_dialog.set_modal(True)
