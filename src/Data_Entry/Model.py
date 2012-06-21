@@ -3,7 +3,7 @@
 # contents in a Gtk.TreeView. This versioni relies upon glade to construct the
 # AddRecordDialog.
 
-from gi.repository import Gtk # pylint: disable-msg = E0611
+from gi.repository import Gtk #@UnresolvedImport pylint: disable-msg = E0611
 
 
 class RecordsStore(Gtk.ListStore):
@@ -44,22 +44,15 @@ def AddRecordDialog(treeview, fields = None):
 # set here. The Glade file ensures that the SpinButton and adjustment holding
 # its value will lie within the valid range of 1 to 4.
 #    
-    OK = 1
-    CANCEL = 0
+
     result = record_dialog.window.run()
-    if result == OK:
+    if result == Gtk.ResponseType.OK:
         fields['project'] = record_dialog.project_entry.get_text()
         fields['status'] = record_dialog.status_entry.get_text()
         fields['priority'] = int(record_dialog.priority_adjustment.get_value())
+# After submitting data to the caller, this dialog's work is done.
         record_dialog.window.destroy()
         return fields
-    elif result == CANCEL:
+    elif result == Gtk.ResponseType.CANCEL:
         record_dialog.window.destroy()
         return None
-
-# After submitting data to the caller, this dialog's work is done.
-        
-    def on_cancel_clicked(self, widget): # pylint: disable-msg = W0613
-# If the user decides to cancel creation of the new record, just close the "Add Record"
-# dialog without reading or saving any of the data.
-        self.window.destroy()
