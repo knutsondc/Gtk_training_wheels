@@ -17,7 +17,7 @@ from gi.repository import GObject #@UnresolvedImport pylint: disable-msg=E0611
 class MyData:
     """ 
     Main program class - defines elements of the principal 
-    program window.
+    program window. Most elements set up in glade.
     """ 
     
     def __init__(self):
@@ -25,84 +25,95 @@ class MyData:
         builder.add_from_file("Data_Entry.glade")
         self.window = builder.get_object("window")
         self.window.set_title("Unsaved Data File")
-# Nearly all of the UI elements and their signal connections are defined
-# in the MyData.glade file.
-
-# The Gtk.TreeView widget to display the data records follows:
+        '''
+        Nearly all of the UI elements and their signal connections are defined
+        in the MyData.glade file, but the Gtk.TreeView widget to display the data
+        records is not. It follows here:
+        '''
         self.treeview = builder.get_object("treeview")
-        
-# The following item later holds references to the data records the user has 
-# selected in the treeview and the Gtk.ListStore from which the data in those
-# records were taken.
-
+        '''
+        The following item later holds references to the data records the user has 
+        selected in the treeview and, by extension, the Gtk.ListStore from which
+        the data in those records were taken.
+        '''
         self.selection = builder.get_object("treeview-selection")
-        
-# Make sure that that reference to selected records is empty at program start
+        '''
+        Make sure that the reference to selected records is empty at program start
+        '''
         self.paths_selected = None
-        
-# Call constructor of subclassed ListStore that adds list of names of columns
-# in the as another member variable of the ListStore object.
+        '''
+        No disk storage of records at program start.
+        '''
         self.disk_file = None        
         
         builder.connect_signals(self)
-        
-# Eventually the following three lines setting up a fixed three-field 
-# RecordsStore will be replaced with code offering the user the choice of
-# opening an existing RecordsStore or creating a new one with a user-
-# number and type of data fields (columns).
+        '''
+        Eventually the following three lines setting up a fixed three-field 
+        RecordsStore will be replaced with code offering the user the choice of
+        opening an existing RecordsStore or creating a new one with a user-set
+        number and type of data fields (columns).
+        '''
         types = [GObject.TYPE_STRING, GObject.TYPE_STRING, GObject.TYPE_INT]
         names = ["Project", "Status", "Priority"]
         self.CurrentRecordsStore = RecordsStore(types, names)
-# Tell the TreeView from where to get its data to display.
+        '''
+        Tell the TreeView from where to get its data to display.
+        '''
         self.treeview.set_model(self.CurrentRecordsStore)
 
-# Empty list to hold list of CellRenderers allocated to the treeview columns.
+        '''
+        Empty list to hold list of CellRenderers allocated to the treeview columns.
+        '''
         renderer = list()
-        
-# Create a list of CellRenderers equal to the number of data columns in the
-# ListStore so that when data cells get edited, we can detect in which column
-# the cell that produced the "edited" signal is found from the "widget" data 
-# contained in the "edited" signal. In this program, the assignment of 
-# CellRenderers to Columns is constant throughout. The "edited" signal emits 
-# a "path" value identifying the row in which the edited cell can be found.
-
+        '''
+        Create a list of CellRenderers equal to the number of data columns in the
+        ListStore so that when data cells get edited, we can detect in which column
+        the cell that produced the "edited" signal is found from the "widget" data 
+        contained in the "edited" signal. In this program, the assignment of 
+        CellRenderers to Columns is constant throughout. The "edited" signal emits 
+        a "path" value identifying the row in which the edited cell can be found.
+        '''
         for i in range(len(names)):
-            
-# We want to use a SpinButton to edit the numeric data entered into the Priority
-# column, so we check for the data type of the column so we can assign the 
-# appropriate CellRenderer to it.
+            '''
+            We want to use a SpinButton to edit the numeric data entered
+            into the Priority column, so we check for the data type of
+            the column so we can assign the appropriate CellRenderer to it.
+            '''    
             if types[i] == GObject.TYPE_INT:
                 renderer.append(Gtk.CellRendererSpin())
-                
-# Attach the CellRendererSpin to the adjustment holding the data defining the
-# SpinButton's behavior. Adjustment object holds the info defining the 
-# SpinButton used to enter 'Priority' values: current value, minimum, maximum,
-# step, page increment, page size.
-                
+                '''
+                Attach the CellRendererSpin to the adjustment holding the
+                data defining the SpinButton's behavior. Adjustment object
+                holds the info defining the SpinButton used to enter
+                'Priority' values: current value, minimum, maximum, step,
+                page increment, and page size.
+                '''
                 renderer[i].set_property("adjustment", 
                                          Gtk.Adjustment(1.0, 1.0, 4.0, 1.0, 4.0, 0.0))
                 
-# Glade doesn't handle anything about TreeViewColumns or CellRenderers, so we 
-# must.The Priority column shouldn't expand, so we set that behavior here, too.
+                '''
+                Glade doesn't handle anything about TreeViewColumns or
+                CellRenderers, so we must.The Priority column shouldn't
+                expand, so we set that behavior here, too.
+                '''
                 expand = False
-                
-# All the other columns receive text and need to expand.
             else:
                 renderer.append(Gtk.CellRendererText())
+                '''All the other columns receive text and need to expand.'''
                 expand = True
                 
             renderer[i].set_property("editable", True)
             renderer[i].connect("edited", self.on_records_edited)
-            
-# Permanently associate this CellRenderer with the column it's assigned to, 
-# which matches the column number in the ListStore. This makes retrieving the 
-# CellRenderer from signal and event messages much easier and ensures that any
-# reordering of columns in the TreeView will not interfere. the GObject.set_data
-# and .get_data methods may be dropped from the next version of PyGtk/PyGObject,
-# though, so watch for whatever facility is offered to replace that part of the
-# API.           
-            
-            
+            '''
+            Permanently associate this CellRenderer with the column it's
+            assigned to, which matches the column number in the ListStore.
+            This makes retrieving the CellRenderer from signal and event
+            messages much easier and ensures that any reordering of columns
+            in the TreeView will not interfere. the GObject.set_data and
+            .get_data methods may be dropped from the next version of
+            PyGtk/PyGObject, though, so watch for whatever facility is
+            offered to replace that part of the API.    
+            '''
             column = Gtk.TreeViewColumn(names[i], renderer[i], text = i)
             renderer[i].set_data("column_obj", column)
             renderer[i].set_data("column_number", i)
@@ -110,29 +121,32 @@ class MyData:
             column.set_clickable(True)
             column.set_resizable(True)
             column.set_reorderable(True)
-            
-# These methods identify the column of the ListStore upon whose values the column
-# in the treeview should be sorted and that a sort indicator showing sort order
-# should be attached to the header when clicked to sort on that column's values.
-# No need to have our own handler for the "column clicked" signal - Gtk apparently
-# takes care of things behind the scenes.          
+            '''
+            These methods identify the column of the ListStore upon whose
+            values the column in the treeview should be sorted and that a
+            sort indicator showing sort order should be attached to the 
+            header when clicked to sort on that column's values. No need to
+            have our own handler for the "column clicked" signal - Gtk
+            apparently takes care of things behind the scenes. 
+            '''
             column.set_sort_column_id(i)
             column.set_sort_indicator(True)
             column.set_expand(expand)
             
-# Append the column to the TreeView.
+            '''Append the column to the TreeView so it will be displayed.'''
             self.treeview.append_column(column)
-
-# Catching the mouse button presses speeds cell selection - no need to click
-# once to select the treeview and another couple times to start editing the
-# content of a cell. 
+            '''
+            Catching the mouse button presses speeds cell selection - no
+            need to click once to select the treeview and another couple
+            times to start editing the content of a cell. 
+            '''
             self.treeview.connect("button-press-event", 
                                   self.on_mouse_button_press_event)
            
     def on_window_delete(self, widget, event): # pylint: disable-msg = w0613
         """When the user clicks the 'close window' gadget. """
         
-# Throw up a dialog asking if the user really wants to quit.
+        '''Throw up a dialog asking if the user really wants to quit.'''
         msg = Gtk.MessageDialog(self.window, Gtk.DialogFlags.MODAL, 
                                 Gtk.MessageType.QUESTION, 
                                 Gtk.ButtonsType.OK_CANCEL, 
@@ -140,19 +154,27 @@ class MyData:
         msg.format_secondary_text("We were having SO much fun......")
         response = msg.run()
         if response == Gtk.ResponseType.OK:
-# Before quitting, check to see if we have a disk file open; if so, close it and
-# only then quit.
+            '''
+            Before quitting, check to see if we have a disk file open;
+            if so, close it and only then quit.
+            '''
             if self.disk_file:
                 shelve.Shelf.close(self.disk_file)
             Gtk.main_quit()
         elif response == Gtk.ResponseType.CANCEL:
-# If the user doesn't want to quit, just go back to where we were.
+            '''
+            If the user changes mind and doesn't want to quit, just go back
+            to where we were.
+            '''
             msg.destroy()
             return True
     
     def on_add_button_clicked(self, widget, fields = None):
         '''
-        Method for adding records.
+        Method for adding records. We pass the ListStore we're using as
+        a parameter to allow for eventual use of multiple ListStores. The
+        fields param holds valid values the user enters in incomplete, invalid
+        entries for use in subsequent passes through this method.
         ''' 
         if not fields:
             fields = {'project':'',
@@ -160,21 +182,23 @@ class MyData:
                       'priority': 1.0,
                       'focus': None }
         
-                                        
-# We pass the ListStore we're using as a parameter to allow for eventual use
-# of multiple ListStores.
-        
         record = AddRecordDialog(self.CurrentRecordsStore, fields)
-# If the user clicked "Cancel" in the Add Record dialog, just do nothing and
-# go back to where we were.
+        
         if record == None:
+            '''
+            If the user clicked "Cancel" in the Add Record dialog, just do
+            nothing and go back to where we were.
+            '''
             return
-# Check the proposed new record to see if the data are valid - non-empty strings
-# for the Project and Status columns and an integer from 1 to 4 for Priority.
-# If there are errors, we again call the Add Record dialog, but with the values,
-# if any, the user supplied as the default values and the cursor set in the first
-# data entry field that caused the error check to fail.
-
+            '''
+            Check the proposed new record to see if the data are
+            valid - non-empty strings for the Project and Status columns
+            and an integer from 1 to 4 for Priority. If there are errors,
+            we again call the Add Record dialog, but with the values, if
+            any, the user supplied as the default values and the cursor
+            set in the first data entry field that caused the error check
+            to fail.
+            '''
         elif self.ErrorCheck(0, record['project']):
             record['focus'] = 'project'
             self.on_add_button_clicked(widget, record)
@@ -187,10 +211,13 @@ class MyData:
             record['focus'] = 'priority'
             self.on_add_button_clicked(widget, record)            
         else:
-# If the data are valid, append them to the ListStore and, if a disk file is
-# open for this ListStore, save the new record to that, too. We're not 
-# concerned with sorting and order in these data stores here - just add the
-# new record to the end.
+            '''
+            If the data are valid, append them to the ListStore and,
+            if a disk file is open for this ListStore, save the new
+            record to that, too. We're not concerned with sorting and
+            order in these data stores here - just add the new record
+            to the end.
+            '''
             row = [record['project'], record['status'], record['priority']]
             self.CurrentRecordsStore.append(row) # pylint: disable-msg = E1103
             if self.disk_file:
@@ -199,7 +226,6 @@ class MyData:
             record['status'] = ''
             record['priority'] = 1.0
             record['focus'] = None
-            
                   
     def on_records_edited(self, widget, path, text):
         '''        
@@ -213,32 +239,33 @@ class MyData:
         '''
 
         col_num = widget.get_data("column_number")
-
-# The "text" parameter emitted with the "edited" signal is a str representation of 
-# the new data the user entered into the edited cell. If the relevant column in the
-# ListStore is expecting an int, we need to cast the str as an int. The SpinButton
-# used for entry of data in the Priority column ensures that "text" will always be
-# a str representation of a double between 1.0 and 4.0, inclusive, so we need only
-# cast it as an int - no bounds checking needed here. .               
-
-
+        '''
+        The "text" parameter emitted with the "edited" signal is a str
+        representation of the new data the user entered into the edited
+        cell. If the relevant column in the ListStore is expecting an
+        int, we need to cast the str as an int. The SpinButton used for
+        entry of data in the Priority column ensures that "text" will
+        always be a str representation of a double between 1.0 and 4.0,
+        inclusive, so we need only cast it as an int - no bounds checking
+        needed here. 
+        '''
         if text.isdigit():
             text = int(text)
-
-# Now submit the new, updated data field to a function that checks it for
-# invalid values.If the updated record fails the error check, the 
-# on_records_edited method returns without changing the existing record; if
-# the error check is passed, the updated data field gets written to the
-# appropriate row and column in the ListStore. This method's path 
-# parameter is a str representation of a Gtk.TreePath, so we must use
-# that to get a 'real' TreePath object with the "from string" version of
-# the Gtk.TreePath constructor. When the CellRenderers were created, the
-# column object to which each was attached was associated with that
-# CellRenderer using set_data(). We use Get_data now to find the
-# column we need. Note that  set_data and get_data may be removed from Gtk
-# in the future and replaced with the ability to set_attr and get_attr.
-
-
+        '''
+        Now submit the new, updated data field to a function that checks
+        it for invalid values.If the updated record fails the error check,
+        the on_records_edited method returns without changing the existing
+        record; if the error check is passed, the updated data field gets
+        written to the appropriate row and column in the ListStore. This
+        method's path parameter is a str representation of a Gtk.TreePath,
+        so we must use that to get a 'real' TreePath object with the "from
+        string" version of the Gtk.TreePath constructor. When the
+        CellRenderers were created, the column object to which each was
+        attached was associated with that CellRenderer using set_data(). We
+        use Get_data now to find the column we need. Note that  set_data
+        and get_data may be removed from Gtk in the future and replaced with
+        the ability to set_attr and get_attr.
+        '''
         if self.ErrorCheck(col_num, text):         
             self.treeview.set_cursor_on_cell(Gtk.TreePath.new_from_string(path),
                                              widget.get_data("column_obj"),
@@ -246,14 +273,14 @@ class MyData:
             self.treeview.grab_focus()
             return
 
-
-# To store the edited data, we can use the path variable to specify the row 
-# for the ListStore, but NOT for the shelve disk file! For that, we need an
-# integer index. Here, the path actually is nothing but a row number, but it
-# is a str, not an int and cannot be used directly. It can be cast as the int 
-# that's needed. We sync() the shelve file immediately, just to make sure all 
-# new data is written safely to disk.
-
+        '''
+        To store the edited data, we can use the path variable to specify the row 
+        for the ListStore, but NOT for the shelve disk file! For that, we need an
+        integer index. Here, the path actually is nothing but a row number, but it
+        is a str, not an int and cannot be used directly. It can be cast as the int 
+        that's needed. We sync() the shelve file immediately, just to make sure all 
+        new data is written safely to disk.
+        '''
         self.CurrentRecordsStore[path][col_num] = text
         if self.disk_file:
             self.disk_file["store"][int(path)][col_num] = text
@@ -330,11 +357,12 @@ class MyData:
                 self.CurrentRecordsStore.remove(i) #pylint: disable-msg=E1103
         '''       
     
-# Shrink the window down to only the size needed to display the remaining
-# records. The method invoked below hides the window and reopens it to the size
-# needed to contain the visible widgets now contained in it, just as when a
-# window is initially opened.
-        
+        '''
+        Shrink the window down to only the size needed to display the 
+        remaining records. The method invoked below hides the window and
+        reopens it to the size needed to contain the visible widgets now
+        contained in it, just as when a window is initially opened.
+        '''
         self.window.reshow_with_initial_size()
 
     def on_selection_changed(self, selection):
@@ -401,19 +429,24 @@ class MyData:
         dialog.add_filter(all_filter)
         response = dialog.run()
         if response == Gtk.ResponseType.OK:
-# Before opening a file, close and file we presently have open and wipe
-# the ListStore..
+            '''
+            Before opening a file, close any file we presently have open
+            and wipe the ListStore..
+            '''
             if self.disk_file:
                 shelve.Shelf.close(self.disk_file)
                 self.CurrentRecordsStore.clear() #pylint: disable-msg = E1103
             self.disk_file = shelve.open(dialog.get_filename(), writeback = True)
-# First, retrieve the 'names' element of the CurrentDataStore
+            '''First, retrieve the 'names' element of the CurrentDataStore'''
             self.CurrentRecordsStore.names = self.disk_file["names"]
-# Now read the record data row-by-row into the CurrentDataStor's 'store' section
+            '''
+            Now read the record data row-by-row into the CurrentDataStore's
+            'store' section
+            '''
             for row in self.disk_file["store"]:
                 self.CurrentRecordsStore.append(row) #pylint:disable-msg = E1103
                 self.disk_file.sync()
-# Change the window title to reflect the file we're now using.
+            '''Change the window title to reflect the file we're now using.'''
             self.window.set_title(os.path.basename(dialog.get_filename()))
             self.window.reshow_with_initial_size()
             dialog.destroy()
@@ -445,9 +478,12 @@ class MyData:
             dialog.add_filter(all_filter)
             response = dialog.run()
             if response == Gtk.ResponseType.OK:
-# In creating a new disk file, we need only append each row in the
-# CurrentRecordsStore to the newly-created 'store' key in the shelve file.
-# We're not concerned about ordering and sorting the data stores.
+                '''
+                In creating a new disk file, we need only append each row 
+                in the CurrentRecordsStore to the newly-created 'store' key
+                in the shelve file.We're not concerned about ordering and
+                sorting the data stores.
+                '''
                 self.disk_file = shelve.open(dialog.get_filename(), 
                                              writeback = True)
                 self.disk_file["names"] = self.CurrentRecordsStore.names
@@ -455,7 +491,7 @@ class MyData:
                 for row in self.CurrentRecordsStore:
                     self.disk_file["store"].append(row[:])
                 self.disk_file.sync()
-# We're now using a file, so the window title should reflect that.
+                '''We're now using a file, so the window title should reflect that.'''
                 self.window.set_title(os.path.basename(dialog.get_filename()))
                 dialog.destroy()
             elif response == Gtk.ResponseType.CANCEL:
@@ -484,9 +520,12 @@ class MyData:
         dialog.add_filter(all_filter)
         response = dialog.run()
         if response == Gtk.ResponseType.OK:
-# In creating a new disk file, we need only append each row in the
-# CurrentRecordsStore to the newly-created 'store' key in the shelve file.
-# We're not concerned about ordering and sorting the data stores.
+            '''
+            In creating a new disk file, we need only append each row
+            in the CurrentRecordsStore to the newly-created 'store' 
+            key in the shelve file. We're not concerned about ordering
+            and sorting the data stores.
+            '''
             self.disk_file = shelve.open(dialog.get_filename(), 
                                         writeback = True)
             self.disk_file["names"] = self.CurrentRecordsStore.names
@@ -494,7 +533,7 @@ class MyData:
             for row in self.CurrentRecordsStore:
                 self.disk_file["store"].append(row[:])
             self.disk_file.sync()
-# We're now using a file, so the window title should reflect that.
+            '''We're now using a file, so the window title should reflect that.'''
             self.window.set_title(os.path.basename(dialog.get_filename()))
             dialog.destroy()
         elif response == Gtk.ResponseType.CANCEL:
@@ -512,15 +551,17 @@ class MyData:
         response = msg.run()
         if response == Gtk.ResponseType.OK:
             if self.disk_file:
-# Close any disk file we have open.
+                '''Close any disk file we have open.'''
                 shelve.Shelf.close(self.disk_file)
             Gtk.main_quit()
         elif response == Gtk.ResponseType.CANCEL:
             msg.destroy()
             return
                
-# Edit menu removed - the Gnome Desktop clipboard already supplies all the
-# intended functions.
+        '''
+        Edit menu removed - the Gnome Desktop clipboard already supplies all the
+        intended functions.
+        '''
         
     def on_about_menu_item_activate(self, widget):
         '''
@@ -548,13 +589,12 @@ class MyData:
         '''
         Tell the user how to use the program.
         '''
-        instructions =  "To start, either open a data file or create one" + \
-        " by clicking 'Add Record.'\n All record fields are mandatory;" + \
-        "Priority must be between 1 and 4,\ninclusive. Select records" + \
-        " with the mouse and click 'Delete Records'\nor select the " + \
-        "'Delete' menu item to remove them. Double click on\ndata fields" + \
-        " to edit them; hit Enter or Tab to save the edited record.\nUse" + \
-        " the 'Save' or 'Save As' menuitems to save your entries to a file."
+        instructions =  ("To start, either open a data file or create one"
+        " by clicking 'Add Record.' All record fields are mandatory; "
+        "Priority must be between 1 and 4,inclusive. Select records"
+        " with the mouse and click 'Delete Records.' Double click on data fields"
+        " to edit them; hit Enter or Tab to save the edited record. Use"
+        " the 'Save' or 'Save As' menu items to save your entries to a file.")
         
         msg = Gtk.MessageDialog(self.window, Gtk.DialogFlags.MODAL, 
                                 Gtk.MessageType.INFO, Gtk.ButtonsType.OK, 

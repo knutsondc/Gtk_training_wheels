@@ -1,13 +1,16 @@
-# Simple data store object definition for use in project intended to help
-# learn how to implement GTK+ 3.0 ListStores and add, delete, and edit theur
-# contents in a Gtk.TreeView. This versioni relies upon glade to construct the
-# AddRecordDialog.
-
+''''
+Simple data store object definition for use in project intended to help
+learn how to implement GTK+ 3.0 ListStores and add, delete, and edit their
+contents in a Gtk.TreeView. This version relies upon glade to construct the
+AddRecordDialog.
+'''
 from gi.repository import Gtk #@UnresolvedImport pylint: disable-msg = E0611
 
 
 class RecordsStore(Gtk.ListStore):
-# Subclass ListStore to add a list of column titles
+    '''
+    Subclass ListStore to add a list of column titles
+    '''
     
     def __init__(self, columns, names):
         
@@ -15,9 +18,11 @@ class RecordsStore(Gtk.ListStore):
         self.names = names
         
 def AddRecordDialog(treeview, fields = None):
-        
-# The UI for the dialog the user completes for each new record is defined in a glade
-# file.
+    '''
+    The UI for the dialog the user completes for each new record is defined in a glade
+    file. Function to get values for a new record. Args point to the current data store
+    and provide a way to communicate previous failed attempts at entering the record.
+    '''
     record_dialog  = Gtk.Builder()
     record_dialog.add_from_file("Add_Record.glade")
 # This window is a dialog, so no close button.
@@ -32,27 +37,38 @@ def AddRecordDialog(treeview, fields = None):
     record_dialog.ok_button = record_dialog.get_object("ok_button")
     record_dialog.cancel_button = record_dialog.get_object("cancel_button")
     record_dialog.connect_signals(record_dialog)
+    '''
+    If some of the data fields already have values when this function gets
+    called, it means that the user tried at least once before and entered
+    illegal values. This code detects where the user first went wrong and
+    puts the cursor and focus on the offending field while maintaining any
+    legal values that were supplied to other fields.
+    '''
     if fields['focus'] == "project":
         record_dialog.project_entry.grab_focus()
     elif fields['focus'] == "status":
         record_dialog.status_entry.grab_focus()
     elif fields['focus'] == "priority":
         record_dialog.priority_spinbutton.grab_focus()
-        
-# Placeholder text for the project and status Gtk.Entries can be set in the Glade
-# file, but the actual starting values for those fields in the new record need to be
-# set here. The Glade file ensures that the SpinButton and adjustment holding
-# its value will lie within the valid range of 1 to 4.
-#    
-
+    '''
+    Now we've got the dialog all set up - show the results and wait
+    for the user to finish data input.
+    '''
     result = record_dialog.window.run()
     if result == Gtk.ResponseType.OK:
         fields['project'] = record_dialog.project_entry.get_text()
         fields['status'] = record_dialog.status_entry.get_text()
         fields['priority'] = int(record_dialog.priority_adjustment.get_value())
-# After submitting data to the caller, this dialog's work is done.
+        '''
+        After submitting data to the caller, this dialog's work is done.
+        '''
         record_dialog.window.destroy()
         return fields
     elif result == Gtk.ResponseType.CANCEL:
+        '''
+        If the user decides to cancel, just close the dialog and go
+        back to the main program loop without changing any recorded
+        data.
+        '''
         record_dialog.window.destroy()
         return None

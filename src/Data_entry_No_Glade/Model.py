@@ -16,6 +16,10 @@ class RecordsStore(Gtk.ListStore):
         self.names = names
         
 def AddRecordDialog(recordsstore, fields):
+    '''
+    Function to get values for a new record. Args point to the current data store and
+    provide a way to communicate previous failed attempts at entering the record.
+    '''
     
     record_dialog = Gtk.Dialog("Add a New Record", buttons = (Gtk.STOCK_OK, Gtk.ResponseType.OK,\
                                                                Gtk.STOCK_CANCEL, Gtk.ResponseType.CANCEL))
@@ -44,21 +48,39 @@ def AddRecordDialog(recordsstore, fields):
     priority_adjustment = Gtk.Adjustment(1.0, 1.0, 4.0, 1.0, 0.0, 0.0 )
     priority_spin.set_adjustment(priority_adjustment)
     hbox.add(priority_spin)
+    '''
+    If some of the data fields already have values when this function gets
+    called, it means that the user tried at least once before and entered
+    illegal values. This code detects where the user first went wrong and
+    puts the cursor and focus on the offending field while maintaining any
+    legal values that were supplied to other fields.
+    '''
     if fields['focus'] == "project":
         project_entry.grab_focus()
     elif fields['focus'] == "status":
         status_entry.grab_focus()
     elif fields['focus'] == "priority":
         priority_spin.grab_focus()
+    '''
+    Now we've got the dialog all set up - show the results and wait
+    for the user to finish data input.
+    '''
     record_dialog.show_all()
     result = record_dialog.run()
     if result == Gtk.ResponseType.OK:
         fields['project'] = project_entry.get_text()
         fields['status'] = status_entry.get_text()
         fields['priority'] = int(priority_adjustment.get_value())
+        '''
+        After submitting data to the caller, this dialog's work is done.
+        '''
         record_dialog.destroy()
         return fields
     elif result == Gtk.ResponseType.CANCEL:
+        '''
+        If the user decides to cancel, just close the dialog and go
+        back to the main program loop without changing any recorded
+        data.
+        '''
         record_dialog.destroy()
         return None
-    

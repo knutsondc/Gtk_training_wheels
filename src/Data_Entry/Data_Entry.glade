@@ -2,6 +2,11 @@
 <interface>
   <!-- interface-requires gtk+ 3.0 -->
   <object class="GtkAccelGroup" id="accel_group"/>
+  <object class="GtkImage" id="image1">
+    <property name="visible">True</property>
+    <property name="can_focus">False</property>
+    <property name="stock">gtk-info</property>
+  </object>
   <object class="GtkWindow" id="window">
     <property name="can_focus">False</property>
     <property name="title" translatable="yes">Unsaved Data File</property>
@@ -160,12 +165,12 @@
                     </child>
                     <child>
                       <object class="GtkImageMenuItem" id="instructions_menu_item">
-                        <property name="label">gtk-dialog-info</property>
+                        <property name="label">Instructions</property>
                         <property name="use_action_appearance">False</property>
                         <property name="visible">True</property>
                         <property name="can_focus">False</property>
-                        <property name="use_underline">True</property>
-                        <property name="use_stock">True</property>
+                        <property name="image">image1</property>
+                        <property name="use_stock">False</property>
                         <property name="accel_group">accel_group</property>
                         <property name="always_show_image">True</property>
                         <accelerator key="i" signal="activate" modifiers="GDK_CONTROL_MASK"/>
