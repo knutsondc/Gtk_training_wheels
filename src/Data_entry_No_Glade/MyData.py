@@ -269,8 +269,11 @@ class MyData:
         saved.
         '''
         
-        if not self.disk_file and len(self.CurrentRecordsStore) > 0:
-            self.save_unsaved()
+        if not self.disk_file:
+            if len(self.CurrentRecordsStore) > 1:
+                self.save_unsaved(plural = True)
+            elif len(self.CurrentRecordsStore) > 0:
+                self.save_unsaved(plural = False)
         
         ''' Throw up a dialog asking if the user really wants to quit.'''
         msg = Gtk.MessageDialog(self.window, Gtk.DialogFlags.MODAL,
@@ -530,8 +533,12 @@ class MyData:
         if self.disk_file:
             shelve.Shelf.close(self.disk_file)
             self.disk_file = None
+        elif len(self.CurrentRecordsStore) > 1:
+            self.save_unsaved(plural = True)
         elif len(self.CurrentRecordsStore) > 0:
-            self.save_unsaved(widget)
+            self.save_unsaved(plural = False)
+#        elif len(self.CurrentRecordsStore) > 0:
+#            self.save_unsaved(widget)
         self.CurrentRecordsStore.clear() #pylint: disable-msg=E1103
         self.window.reshow_with_initial_size()
         self.window.set_title("Unsaved Data File")            
@@ -541,8 +548,12 @@ class MyData:
         Open an existing file. First, check to see if there's unsaved data
         and ask the user if he wants to save it.
         '''
-        if not self.disk_file and len(self.CurrentRecordsStore) > 0:
-            self.save_unsaved(widget)
+        if not self.disk_file:
+            if len(self.CurrentRecordsStore) > 1:
+                self.save_unsaved(plural = True)
+            elif len(self.CurrentRecordsStore) > 0:
+                self.save_unsaved(plural = False)
+                
         dialog = Gtk.FileChooserDialog("Open File", self.window,
                                        Gtk.FileChooserAction.OPEN,
                                        (Gtk.STOCK_CANCEL,
@@ -772,16 +783,22 @@ class MyData:
             msg.destroy()
             return True
         
-    def save_unsaved(self):
+    def save_unsaved(self, plural):
         '''
         Ask user if he'd like to save unsaved data before taking a step that
         will purge unsaved records.
         '''
+        if plural:
+            txt1 = "You have unsaved data records."
+            txt2 = "Do you wish to save them?"
+        else:
+            txt1 = "You have an unsaved data record."
+            txt2 = "Do you wish to save it?"
         msg = Gtk.MessageDialog(self.window, Gtk.DialogFlags.MODAL, 
                                 Gtk.MessageType.QUESTION, 
                                 Gtk.ButtonsType.OK_CANCEL, 
-                                "You have unsaved data records.")
-        msg.format_secondary_text("Do you wish to save them?")
+                                txt1)
+        msg.format_secondary_text(txt2)
         response = msg.run()
         if response == Gtk.ResponseType.OK:
             '''
