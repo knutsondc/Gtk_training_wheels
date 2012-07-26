@@ -7,6 +7,11 @@
     <property name="can_focus">False</property>
     <property name="stock">gtk-info</property>
   </object>
+  <object class="GtkImage" id="image7">
+    <property name="visible">True</property>
+    <property name="can_focus">False</property>
+    <property name="stock">gtk-about</property>
+  </object>
   <object class="GtkWindow" id="window">
     <property name="can_focus">False</property>
     <property name="title" translatable="yes">Unsaved Data File</property>
@@ -110,7 +115,6 @@
                     </child>
                     <child>
                       <object class="GtkSeparatorMenuItem" id="separatormenuitem1">
-                        <property name="use_action_appearance">False</property>
                         <property name="visible">True</property>
                         <property name="can_focus">False</property>
                       </object>
@@ -151,12 +155,13 @@
                     <property name="accel_group">accel_group</property>
                     <child>
                       <object class="GtkImageMenuItem" id="about_menu_item">
-                        <property name="label">gtk-about</property>
+                        <property name="label">_About</property>
                         <property name="use_action_appearance">False</property>
                         <property name="visible">True</property>
                         <property name="can_focus">False</property>
                         <property name="use_underline">True</property>
-                        <property name="use_stock">True</property>
+                        <property name="image">image7</property>
+                        <property name="use_stock">False</property>
                         <property name="accel_group">accel_group</property>
                         <property name="always_show_image">True</property>
                         <accelerator key="a" signal="activate" modifiers="GDK_CONTROL_MASK"/>
@@ -165,10 +170,11 @@
                     </child>
                     <child>
                       <object class="GtkImageMenuItem" id="instructions_menu_item">
-                        <property name="label">Instructions</property>
+                        <property name="label">_Instructions</property>
                         <property name="use_action_appearance">False</property>
                         <property name="visible">True</property>
                         <property name="can_focus">False</property>
+                        <property name="use_underline">True</property>
                         <property name="image">image1</property>
                         <property name="use_stock">False</property>
                         <property name="accel_group">accel_group</property>
@@ -219,7 +225,7 @@
             <property name="homogeneous">True</property>
             <child>
               <object class="GtkButton" id="add_record_button">
-                <property name="label" translatable="yes">Add Record</property>
+                <property name="label" translatable="yes">_Add Record</property>
                 <property name="use_action_appearance">False</property>
                 <property name="visible">True</property>
                 <property name="can_focus">True</property>
@@ -227,6 +233,7 @@
                 <property name="has_default">True</property>
                 <property name="receives_default">True</property>
                 <property name="use_action_appearance">False</property>
+                <property name="use_underline">True</property>
                 <signal name="clicked" handler="on_add_button_clicked" swapped="no"/>
               </object>
               <packing>
@@ -237,12 +244,13 @@
             </child>
             <child>
               <object class="GtkButton" id="delete_record_button">
-                <property name="label" translatable="yes">Delete Record(s)</property>
+                <property name="label" translatable="yes">_Delete Record(s)</property>
                 <property name="use_action_appearance">False</property>
                 <property name="visible">True</property>
                 <property name="can_focus">True</property>
                 <property name="receives_default">True</property>
                 <property name="use_action_appearance">False</property>
+                <property name="use_underline">True</property>
                 <signal name="clicked" handler="on_delete_button_clicked" swapped="no"/>
               </object>
               <packing>

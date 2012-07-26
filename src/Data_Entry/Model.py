@@ -28,6 +28,10 @@ def AddRecordDialog(treeview, fields = None):
 # This window is a dialog, so no close button.
     record_dialog.window = record_dialog.get_object("add_record_dialog")
     record_dialog.project_entry = record_dialog.get_object("project_entry")
+    '''
+    Set field values to those entered on previous unsuccessful attempts to create
+    a record or, if there is no previous valid entry, make the entry blank.
+    '''
     record_dialog.project_entry.set_text(fields['project'])
     record_dialog.status_entry = record_dialog.get_object("status_entry")
     record_dialog.status_entry.set_text(fields['status'])
@@ -58,6 +62,9 @@ def AddRecordDialog(treeview, fields = None):
     if result == Gtk.ResponseType.OK:
         fields['project'] = record_dialog.project_entry.get_text()
         fields['status'] = record_dialog.status_entry.get_text()
+        '''
+        The priority_adjustment gives a float value, but we need an int.
+        '''
         fields['priority'] = int(record_dialog.priority_adjustment.get_value())
         '''
         After submitting data to the caller, this dialog's work is done.

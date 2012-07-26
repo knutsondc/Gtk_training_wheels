@@ -145,6 +145,11 @@ class MyData:
            
     def on_window_delete(self, widget, event): # pylint: disable-msg = w0613
         """When the user clicks the 'close window' gadget. """
+        '''
+        First check for unsaved data and ask if it should be saved.
+        '''
+        if not self.disk_file and len(self.CurrentRecordsStore) > 0:
+            self.save_unsaved()
         
         '''Throw up a dialog asking if the user really wants to quit.'''
         msg = Gtk.MessageDialog(self.window, Gtk.DialogFlags.MODAL, 
@@ -396,22 +401,28 @@ class MyData:
                 
     def on_new_menu_item_activate(self, widget):
         '''
-        Go back to where we were when the program first opened: close and open
-        disk files and wipe the ListStore (and, consequently, the TreeView, clean.
-        Change the disk_file to None so we won't try to write to alcose file!
-        Change the window title to reflect we're now working on unsaved data.
+        Go back to where we were when the program first opened: close any open
+        disk files; otherwise check for unsaved data,  ask user if he wishes
+        to save it, and save to disk if he does. Then wipe the ListStore (and,
+        consequently, the TreeView, clean. Change the disk_file to None so we
+        won't try to write to a closed file! Change the window title to reflect
+        we're now working on unsaved data.
         '''
         if self.disk_file:
             shelve.Shelf.close(self.disk_file)
             self.disk_file = None
+        elif len(self.CurrentRecordsStore) > 0:
+            self.save_unsaved(widget)
         self.CurrentRecordsStore.clear() # pylint: disable-msg=E1103
         self.window.reshow_with_initial_size()
         self.window.set_title("Unsaved Data File")            
 
-    def on_open_menu_item_activate(self, Widget):
+    def on_open_menu_item_activate(self, widget):
         '''
-        Open an existing file. First, open a FileChooser dialog in OPEN mode.
+        Open an existing file. First, check for unsaved data.
         '''
+        if not self.disk_file and len(self.CurrentRecordsStore) > 0:
+            self.save_unsaved(widget)
         dialog = Gtk.FileChooserDialog("Open File", self.window, 
                                        Gtk.FileChooserAction.OPEN, 
                                        (Gtk.STOCK_CANCEL, 
@@ -543,21 +554,7 @@ class MyData:
         '''
         Exit the program?
         '''
-        msg = Gtk.MessageDialog(self.window, Gtk.DialogFlags.MODAL, \
-                                Gtk.MessageType.QUESTION, \
-                                Gtk.ButtonsType.OK_CANCEL, \
-                                "Are you SURE you want to quit?")
-        msg.format_secondary_text("We were having SO much fun......")
-        response = msg.run()
-        if response == Gtk.ResponseType.OK:
-            if self.disk_file:
-                '''Close any disk file we have open.'''
-                shelve.Shelf.close(self.disk_file)
-            Gtk.main_quit()
-        elif response == Gtk.ResponseType.CANCEL:
-            msg.destroy()
-            return
-               
+        self.on_window_delete(self, None, None)
         '''
         Edit menu removed - the Gnome Desktop clipboard already supplies all the
         intended functions.
@@ -565,7 +562,7 @@ class MyData:
         
     def on_about_menu_item_activate(self, widget):
         '''
-        Tell the user about the program.
+        Tell the user about the program using Gtk's built-in "About" Dialog.
         '''
         authors = ["Darron C. Knutson", None]
         copyright_notice = "Copyright 2012, Darron C. Knutson"
@@ -647,6 +644,30 @@ class MyData:
             msg.run()
             msg.destroy()
             return True
+        
+    def save_unsaved(self):
+        '''
+        Ask user if he'd like to save unsaved data before taking a step that
+        will purge unsaved records.
+        '''
+        msg = Gtk.MessageDialog(self.window, Gtk.DialogFlags.MODAL, 
+                                Gtk.MessageType.QUESTION, 
+                                Gtk.ButtonsType.OK_CANCEL, 
+                                "You have unsaved data records.")
+        msg.format_secondary_text("Do you wish to save them?")
+        response = msg.run()
+        if response == Gtk.ResponseType.OK:
+            '''
+            If the user chooses to save, call the Save method,
+            '''
+            self.on_save_menu_item_activate(widget)
+            msg.destroy()
+        elif response == Gtk.ResponseType.CANCEL:
+            '''
+            If the user chooses not to save, just destroy the Dialog
+            and proceed with the task the user originally asked for.
+            '''
+            msg.destroy()
 
 if __name__ == "__main__":
     win = MyData()

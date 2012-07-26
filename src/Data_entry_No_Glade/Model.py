@@ -49,9 +49,9 @@ def AddRecordDialog(recordsstore, fields):
     priority_spin.set_adjustment(priority_adjustment)
     hbox.add(priority_spin)
     '''
-    If some of the data fields already have values when this function gets
+    If the "focus" data fields has a value  when this function gets
     called, it means that the user tried at least once before and entered
-    illegal values. This code detects where the user first went wrong and
+    an illegal value. That field shows where the user first went wrong and
     puts the cursor and focus on the offending field while maintaining any
     legal values that were supplied to other fields.
     '''
@@ -70,6 +70,9 @@ def AddRecordDialog(recordsstore, fields):
     if result == Gtk.ResponseType.OK:
         fields['project'] = project_entry.get_text()
         fields['status'] = status_entry.get_text()
+        '''
+        Adjustments return floats, but we need an int.
+        '''
         fields['priority'] = int(priority_adjustment.get_value())
         '''
         After submitting data to the caller, this dialog's work is done.
