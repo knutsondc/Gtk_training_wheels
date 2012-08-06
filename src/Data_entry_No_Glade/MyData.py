@@ -159,51 +159,38 @@ class MyData:
         self.CurrentRecordsStore = RecordsStore(types, names)
         self.treeview.set_model(self.CurrentRecordsStore)
         self.box.pack_start(self.treeview, True, True, 0)
-        renderer = list()
-        '''
-        Empty list to hold list of CellRenderers allocated to the treeview columns.
-        '''
-        
+        self.renderer = list()
         '''
         Create a list of CellRenderers equal to the number of data columns in the
         ListStore so that when data cells get edited, we can detect in which column
         the cell that produced the "edited" signal is found from the "widget" data 
         contained in the "edited" signal. In this program, the assignment of 
         CellRenderers to Columns is constant throughout. The "edited" signal emits 
-        a "path" value identifying the row in which the edited cell can be found.'''
+        a "path" value identifying the row in which the edited cell can be found.
+        '''
 
-        for i in range(len(names)):
-            
+        for i in range(len(names)):          
             '''
             We want to use a SpinButton to edit the numeric data entered into the Priority
             column, so we check for the data type of the column so we can assign the 
             appropriate CellRenderer to it.
             '''
             if types[i] == GObject.TYPE_INT:
-                renderer.append(Gtk.CellRendererSpin())
-                
+                self.renderer.append(Gtk.CellRendererSpin())              
                 '''
                 Attach the CellRendererSpin to the adjustment holding the data defining the
                 SpinButton's behavior.
-                '''
-                
-                renderer[i].set_property("adjustment", Gtk.Adjustment(
-                                        1.0, 1.0, 4.0, 1.0, 4.0, 0.0))
-                
+                '''               
+                self.renderer[i].set_property("adjustment", Gtk.Adjustment(
+                                        1.0, 1.0, 4.0, 1.0, 4.0, 0.0))              
                 '''The Priority column shouldn't expand, so we set that behavior here, too.'''
                 expand = False
                 
             else:
                 '''All the other columns receive text and need to expand.'''
-                renderer.append(Gtk.CellRendererText())
+                self.renderer.append(Gtk.CellRendererText())
                 expand = True
-                
-            renderer[i].set_property("editable", True)
-            renderer[i].connect("edited", self.on_records_edited)
-                                   
-            column = Gtk.TreeViewColumn(names[i], renderer[i], text = i)
-            renderer[i].set_data("column_obj", column)
-            renderer[i].set_data("column_number", i)
+            column = Gtk.TreeViewColumn(names[i], self.renderer[i], text = i)
             '''
             Permanently associate this CellRenderer with the column it's assigned to, 
             which matches the column number in the ListStore. This makes retrieving the 
@@ -213,6 +200,23 @@ class MyData:
             though, so watch for whatever facility is offered to replace that part of the
             API.
             '''
+            self.renderer[i].set_data("column_obj", column)
+            self.renderer[i].set_data("column_number", i)
+            
+ #           column.set_cell_data_func(self.renderer[i], self.validation_on_cell_data)
+ # Line commented out above sets a custom function to determine what and how to display as data
+ # in the treeview. Not needed here because we need only display the bare data in the model.
+ 
+            self.renderer[i].set_property("editable", True)
+            '''
+            The data in each column needs to be editable, so all the renderers need
+            to have the "editable" property set as "True" and all the renderers need
+            to be connected to all the editing related signals we use.
+            '''
+            self.renderer[i].connect("editing-started", self.validation_on_editing_started)
+            self.renderer[i].connect("editing-canceled", self.validation_on_editing_cancelled)
+            self.renderer[i].connect("edited", self.validation_on_edited)
+
             column.set_sizing(Gtk.TreeViewColumnSizing.AUTOSIZE)
             column.set_clickable(True)
             column.set_resizable(True)
@@ -233,14 +237,17 @@ class MyData:
             '''Append the column to the TreeView.'''
             self.treeview.append_column(column)
 
-            '''
-            Catching the mouse button presses speeds cell selection - now click once
-            to select the row and then a single click on any cell in that row to start
-            editing that cell.
-            ''' 
-            self.treeview.connect("button-press-event",
-                                  self.on_mouse_button_press_event)
         self.disk_file = None
+        self.validate_retry = False
+        '''
+        Flag indicating whether an edit is a retry after an attempt
+        to enter invalid data.
+        '''
+        self.invalid_text_for_retry = ""
+        '''
+        Initialize variable to hold the invalid text attempted to be 
+        entered in an earlier unsuccessful edit.
+        '''  
         
     def make_buttons(self):
         ''' Set up buttons for adding and deleting records.  '''      
@@ -357,9 +364,59 @@ class MyData:
             self.CurrentRecordsStore.append(row) # pylint: disable-msg = E1103
             if self.disk_file:
                 self.disk_file["store"].append(row)
-            
-    def on_records_edited(self, widget, path, text):
+                
+# The commented out method below caught Tab key presses and made sure they got
+# handled the same as Enter key strokes. Now not necessary as the restart_editing()
+# method fixed the problem with Tab entries and mouse clicks outside a cell getting
+# edited.
+
+#    def on_keypress_event(self, widget, event, data = None):
+#        if Gdk.keyval_name(event.keyval) == 'Tab':
+#            widget.activate()
+#            return True
+                            
+# The commented out method below is a simple function to use with a renderer's set_data_func() method
+# to display the bare data in the ListStore/model.
+
+#    def validation_on_cell_data(self, column, cell_renderer, tree_model, my_iter, user_data = None):
+#        value = tree_model.get_value(my_iter, cell_renderer.get_data("column_number"))
+#        cell_renderer.set_property("text", value)
         
+    def validation_on_editing_started(self, cell, cell_editable, row):
+        '''
+        This method gives us access to the Gtk.Entry used by a CellRendererText
+        for editing its contents so we can set up the Entry with the invalid
+        data the user tried to enter when the program restarts editing after an
+        unsuccessful attempt to edit a cell's contents.
+        '''
+#        cell_editable.connect("key-press-event", self.on_keypress_event)
+        if self.validate_retry:
+            self.treeview.grab_focus()
+            self.edit_entry = cell_editable
+            if self.CurrentRecordsStore.get_column_type(cell.get_data("column_number")) == GObject.TYPE_INT:
+                self.invalid_text_for_retry = str(self.invalid_text_for_retry)
+            self.edit_entry.set_text(self.invalid_text_for_retry)
+            self.validate_retry = False
+            self.invalid_text_for_retry = ""
+
+    def validation_on_editing_cancelled(self, cell, data = None):
+        '''
+        Should the user cancel editing by hitting Esc or clicking outside the
+        treeview, this method will restore the cell's value to what it was before
+        the editing began.
+        '''
+        my_iter = self.CurrentRecordsStore.get_iter(self.paths_selected[0])
+        '''
+        The treeview's selection mode is set to MULTIPLE, but if we're editing a
+        cell, only a single row will have been selected. This gives us a single-
+        member list of paths. so we subscript the selection to get the path
+        parameter needed to obtain the iterator required to fetch the preexisting
+        data for this cell from the model.
+        '''
+        col_num = cell.get_data("column_number")
+        cell.set_property("text", self.CurrentRecordsStore.get_value(my_iter, col_num))
+              
+    def validation_on_edited(self, cell, path, text):       
         '''        
         The "path" parameter emitted with the signal contains a str reference to
         the row number of the cell that produced the signal.The widget parameter
@@ -369,8 +426,7 @@ class MyData:
         place in the list of renderers, but the approach taken here is more
         generalized.
         '''
-
-        col_num = widget.get_data("column_number")
+        col_num = cell.get_data("column_number")
         '''
         The "text" parameter emitted with the "edited" signal is a str representation
         of the new data the user entered into the edited cell. If the relevant column 
@@ -396,26 +452,54 @@ class MyData:
             column we need. Note that  set_data and get_data may be removed from Gtk
             in the future and replaced with the ability to set_attr and get_attr.
             '''
-        if self.ErrorCheck(col_num, text):         
-            self.treeview.set_cursor_on_cell(Gtk.TreePath.new_from_string(path),
-                                             widget.get_data("column_obj"),
-                                             widget, True)
-            self.treeview.grab_focus()
-            return
-
-        '''
+        if self.ErrorCheck(col_num, text):
+            self.invalid_text_for_retry = text
+            self.validate_retry = True
+            GObject.idle_add(self.restart_edit, path, cell.get_data("column_obj"))
+            '''
+            This is a bit of a hack to get around a long-standing bug in Gtk.
+            The set_cursor method called in restart_edit destroys the Gtk.Entry
+            in which editing had been occurring and causes an "edited" signal
+            to be emitted. Without the delay caused by wrapping the set_cursor
+            method in the restart_edit method embedded in a call to 
+            GObject.idle_add(), however, the "edited" signal gets sent before
+            the Entry gets destroyed, breaking the CellRenderer and its connection
+            to the underlying model's data. See www.gtkforums.com/viewtopic.php?t=4619
+            from December 2009! One can click again on the cell and enter a value,
+            but the cell will thereafter ALWAYS display ONLY that value, even when
+            rows or columns get shuffled. GObject.idle_add() makes the call to
+            set_cursor() asynchronously issue from the main loop's thread rather than
+            synchronously, as before.
+            '''
+#            self.treeview.set_cursor(Gtk.TreePath.new_from_string(path),
+#                                             cell.get_data("column_obj"),
+#                                             True)         
+        else:
+            '''
         To store the edited data, we can use the path variable to specify the row 
         for the ListStore, but NOT for the shelve disk file! For that, we need an
         integer index. Here, the path actually is nothing but a row number, but it
         is a str, not an int and cannot be used directly. It can be cast as the int 
         that's needed. We sync() the shelve file immediately, just to make sure all 
         new data is written safely to disk.
-        '''
-        self.CurrentRecordsStore[path][col_num] = text
-        if self.disk_file:
-            self.disk_file["store"][int(path)][col_num] = text
-            self.disk_file.sync()
+            '''
+            self.CurrentRecordsStore[path][col_num] = text
+            if self.disk_file:
+                self.disk_file["store"][int(path)][col_num] = text
+                self.disk_file.sync()
             
+    def restart_edit(self, path, col):
+        '''
+        See comment above call to ErrorCheck in validation_on_edited()
+        method.
+        '''
+        self.treeview.set_cursor(Gtk.TreePath.new_from_string(path),
+                                             col,
+                                             True)
+        return False
+        '''
+        Return False so that this method won't go on running forever.
+        '''    
     def on_delete_button_clicked(self, widget): # pylint: disable-msg = W0613
         
         '''
@@ -502,28 +586,9 @@ class MyData:
         '''
         self.CurrentRecordsStore, self.paths_selected = \
          self.selection.get_selected_rows()
-
-
-    def on_mouse_button_press_event(self, treeview, event):
-        """
-        Button 1 is the left mouse button (for righties, anyway!) and event.type
-        5 is a 2ButtonPress event, aka a double-click. From the coordinates of the
-        button press, we can get the cell's row and TreeViewColumn. We stored the
-        CellRendererText for the column TreeViewColumn data field and now retrieve
-        it so we can focus the treeview cursor on an individual cell.
-        """
-        if (event.type == 5) and (event.button == 1):
-            x = int(event.x)
-            y = int(event.y)
-            pathinfo = treeview.get_path_at_pos(x, y)
-            if pathinfo is not None:
-                path, col, cellx, celly = pathinfo #@UnusedVariable
-                treeview.set_cursor_on_cell(path, col,
-                                            col.get_data("column_number"), True)
-                treeview.grab_focus()
-            return [path, col, col.get_data("column_number"), False]
     
     def on_new_menu_item_activate(self, widget):
+        
         '''
         Go back to where we were when the program first opened: close and open
         disk files and wipe the ListStore (and, consequently, the TreeView, clean.
@@ -537,8 +602,6 @@ class MyData:
             self.save_unsaved(plural = True)
         elif len(self.CurrentRecordsStore) > 0:
             self.save_unsaved(plural = False)
-#        elif len(self.CurrentRecordsStore) > 0:
-#            self.save_unsaved(widget)
         self.CurrentRecordsStore.clear() #pylint: disable-msg=E1103
         self.window.reshow_with_initial_size()
         self.window.set_title("Unsaved Data File")            
@@ -753,7 +816,7 @@ class MyData:
                                    self.CurrentRecordsStore.names[col_num])
                 msg.set_title("%s Entry Error!" % self.CurrentRecordsStore.names[col_num])
                 msg.run()
-                msg.destroy()
+                msg.hide()
                 return True
             else:
                 return False
@@ -770,7 +833,7 @@ class MyData:
                         "Priority value must be an integer between 1 and 4.")
                 msg.set_title("Priority Entry Error!")
                 msg.run()
-                msg.destroy()
+                msg.hide()
                 return True
             else:
                 return False
@@ -804,7 +867,7 @@ class MyData:
             '''
             If the user chooses to save, call the Save method,
             '''
-            self.on_save_menu_item_activate(widget)
+            self.on_save_menu_item_activate()
             msg.destroy()
         elif response == Gtk.ResponseType.CANCEL:
             '''
