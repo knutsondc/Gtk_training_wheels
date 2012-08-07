@@ -278,9 +278,11 @@ class MyData:
         
         if not self.disk_file:
             if len(self.CurrentRecordsStore) > 1:
-                self.save_unsaved(plural = True)
+                plural = True
             elif len(self.CurrentRecordsStore) > 0:
-                self.save_unsaved(plural = False)
+                plural = False
+                
+            self.save_unsaved(plural)
         
         ''' Throw up a dialog asking if the user really wants to quit.'''
         msg = Gtk.MessageDialog(self.window, Gtk.DialogFlags.MODAL,
