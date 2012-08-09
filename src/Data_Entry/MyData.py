@@ -515,24 +515,33 @@ class MyData:
             '''
             if self.disk_file:
                 shelve.Shelf.close(self.disk_file)
-                self.CurrentRecordsStore.clear() #pylint: disable-msg = E1103
-            self.disk_file = shelve.open(dialog.get_filename(), writeback = True)
-            '''First, retrieve the 'names' element of the CurrentDataStore'''
-            self.CurrentRecordsStore.names = self.disk_file["names"]
-            '''
-            Now read the record data row-by-row into the CurrentDataStore's
-            'store' section
-            '''
-            for row in self.disk_file["store"]:
-                self.CurrentRecordsStore.append(row) #pylint:disable-msg = E1103
-                self.disk_file.sync()
-            '''Change the window title to reflect the file we're now using.'''
-            self.window.set_title(os.path.basename(dialog.get_filename()))
-            self.window.reshow_with_initial_size()
+                self.CurrentRecordsStore.clear()    #pylint: disable-msg = E1103
+            try:
+                self.disk_file = shelve.open(dialog.get_filename(),
+                                          writeback = True)
+                '''First, retrieve the 'names' element of the CurrentDataStore'''
+                self.CurrentRecordsStore.names = self.disk_file["names"]
+                '''
+                Now read the record data row-by-row into the CurrentDataStore
+                '''
+                for row in self.disk_file["store"]:
+                    self.CurrentRecordsStore.append(row) #pylint:disable-msg = E1103
+                    self.disk_file.sync()
+                '''Change the window title to reflect the file we're now using.'''
+                self.window.set_title(os.path.basename(dialog.get_filename()))
+                self.window.reshow_with_initial_size()
+            except Exception as inst:
+                msg = Gtk.MessageDialog(None, Gtk.DialogFlags.MODAL,
+                                   Gtk.MessageType.ERROR, Gtk.ButtonsType.OK,
+                                   "Couldn't open file: %s error." % 
+                                   type(inst))
+                msg.format_secondary_text(inst)
+                msg.set_title("File Open Error!")
+                msg.run()
+                msg.destroy()            
             dialog.destroy()
         elif response == Gtk.ResponseType.CANCEL:
             dialog.destroy()
-
     def on_save_menu_item_activate(self, widget):
         '''
         If we have a file open already, just update it.
@@ -560,20 +569,32 @@ class MyData:
             response = dialog.run()
             if response == Gtk.ResponseType.OK:
                 '''
-                In creating a new disk file, we need only append each row 
-                in the CurrentRecordsStore to the newly-created 'store' key
-                in the shelve file.We're not concerned about ordering and
-                sorting the data stores.
+                In creating a new disk file, we need only append each row in the
+                CurrentRecordsStore to the newly-created 'store' key in the shelve
+                file. We're not concerned about ordering and sorting the data stores.
                 '''
-                self.disk_file = shelve.open(dialog.get_filename(), 
-                                             writeback = True)
-                self.disk_file["names"] = self.CurrentRecordsStore.names
-                self.disk_file["store"] = []
-                for row in self.CurrentRecordsStore:
-                    self.disk_file["store"].append(row[:])
-                self.disk_file.sync()
-                '''We're now using a file, so the window title should reflect that.'''
-                self.window.set_title(os.path.basename(dialog.get_filename()))
+                try:
+                    self.disk_file = shelve.open(dialog.get_filename(),
+                                                 writeback = True)
+                    self.disk_file["names"] = self.CurrentRecordsStore.names
+                    self.disk_file["store"] = []
+                    for row in self.CurrentRecordsStore:
+                        self.disk_file["store"].append(row[:])
+                        self.disk_file.sync()
+                    '''
+                    We're now using a file, so the window title should reflect that.
+                    '''
+                    self.window.set_title(os.path.basename(dialog.get_filename()))
+                    dialog.destroy()
+                except Exception as inst:
+                    msg = Gtk.MessageDialog(None, Gtk.DialogFlags.MODAL,
+                                            Gtk.MessageType.ERROR, Gtk.ButtonsType.OK,
+                                            "Couldn't save file: %s error." % 
+                                            type(inst))
+                    msg.format_secondary_text(inst)
+                    msg.set_title("Error Saving File!")
+                    msg.run()
+                    msg.destroy()
                 dialog.destroy()
             elif response == Gtk.ResponseType.CANCEL:
                 dialog.destroy()
@@ -602,20 +623,31 @@ class MyData:
         response = dialog.run()
         if response == Gtk.ResponseType.OK:
             '''
-            In creating a new disk file, we need only append each row
-            in the CurrentRecordsStore to the newly-created 'store' 
-            key in the shelve file. We're not concerned about ordering
-            and sorting the data stores.
+            In creating a new disk file, we need only append each row in the
+            CurrentRecordsStore to the newly-created 'store' key in the shelve
+            file. We're not concerned about ordering and sorting the data stores.
             '''
-            self.disk_file = shelve.open(dialog.get_filename(), 
-                                        writeback = True)
-            self.disk_file["names"] = self.CurrentRecordsStore.names
-            self.disk_file["store"] = []
-            for row in self.CurrentRecordsStore:
-                self.disk_file["store"].append(row[:])
-            self.disk_file.sync()
-            '''We're now using a file, so the window title should reflect that.'''
-            self.window.set_title(os.path.basename(dialog.get_filename()))
+            try:
+                self.disk_file = shelve.open(dialog.get_filename(),
+                                             writeback = True)
+                self.disk_file["names"] = self.CurrentRecordsStore.names
+                self.disk_file["store"] = []
+                for row in self.CurrentRecordsStore:
+                    self.disk_file["store"].append(row[:])
+                self.disk_file.sync()
+                '''
+                We're now using a file, so the window title should reflect that.
+                '''
+                self.window.set_title(os.path.basename(dialog.get_filename()))
+            except Exception as inst:
+                    msg = Gtk.MessageDialog(None, Gtk.DialogFlags.MODAL,
+                                            Gtk.MessageType.ERROR, Gtk.ButtonsType.OK,
+                                            "Couldn't save file: %s error." % 
+                                            type(inst))
+                    msg.format_secondary_text(inst)
+                    msg.set_title("Error Saving File!")
+                    msg.run()
+                    msg.destroy()
             dialog.destroy()
         elif response == Gtk.ResponseType.CANCEL:
             dialog.destroy()
@@ -657,13 +689,15 @@ class MyData:
         Tell the user how to use the program.
         '''
         instructions = "To start, either open a data file or create one" + \
-        " by clicking 'Add Record.'\n All record fields are mandatory;" + \
-        "Priority must be between 1 and 4,\ninclusive. Select records" + \
+        " by clicking 'Add Record.'\nAll record fields are mandatory;" + \
+        " Priority must be between 1 and 4,\ninclusive. Select records" + \
         " with the mouse and click 'Delete Records'\nor select the " + \
         "'Delete' menu item to remove them. Double click on\ndata fields" + \
-        " to edit them; hit Enter or Tab to save the edited record.\nUse" + \
-        " the 'Save' or 'Save As' menuitems to save your entries to a file."
-        
+        " to edit them; hit Enter or Tab or click another cell in the\n" + \
+        "chart to save the edited record. Hit Esc or click outside the chart\n" +\
+        "to cancel edits and retrieve the old data. Use the 'Save'or 'Save As'\n" + \
+        "menuitems to save your entries to a file."
+                
         msg = Gtk.MessageDialog(self.window, Gtk.DialogFlags.MODAL, 
                                 Gtk.MessageType.INFO, Gtk.ButtonsType.OK, 
                                 instructions)

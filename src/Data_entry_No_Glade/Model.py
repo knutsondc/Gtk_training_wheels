@@ -15,7 +15,7 @@ class RecordsStore(Gtk.ListStore):
         Gtk.ListStore.__init__(self, *columns)
         self.names = names
         
-def AddRecordDialog(recordsstore, fields):
+def AddRecordDialog(recordsstore, fields = None):
     '''
     Function to get values for a new record. Args point to the current data store and
     provide a way to communicate previous failed attempts at entering the record.

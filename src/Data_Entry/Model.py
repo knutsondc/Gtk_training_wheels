@@ -17,7 +17,7 @@ class RecordsStore(Gtk.ListStore):
         Gtk.ListStore.__init__(self, *columns)
         self.names = names
         
-def AddRecordDialog(liststore, fields = None):
+def AddRecordDialog(recordsstore, fields = None):
     '''
     The UI for the dialog the user completes for each new record is defined in a glade
     file. Function to get values for a new record. Args point to the current data store
