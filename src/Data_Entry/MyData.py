@@ -113,8 +113,8 @@ class MyData:
             PyGtk/PyGObject, though, so watch for whatever facility is
             offered to replace that part of the API.    
             '''
-            self.renderer[i].set_data("column_obj", column)
-            self.renderer[i].set_data("column_number", i)
+            self.renderer[i].column_obj = column
+            self.renderer[i].column_number = i
             column.set_sizing(Gtk.TreeViewColumnSizing.AUTOSIZE)
             column.set_clickable(True)
             column.set_resizable(True)
@@ -155,20 +155,21 @@ class MyData:
         '''
         First check for unsaved data and ask if it should be saved.
         '''
-        if not self.disk_file:
+        if not self.disk_file and len(self.CurrentRecordsStore) > 0:
             if len(self.CurrentRecordsStore) > 1:
                 plural = True
-            elif len(self.CurrentRecordsStore) > 0:
+            else:
                 plural = False
                 
             self.save_unsaved(plural)
         
         '''Throw up a dialog asking if the user really wants to quit.'''
-        msg = Gtk.MessageDialog(self.window, Gtk.DialogFlags.MODAL, 
+        msg = Gtk.MessageDialog(None, Gtk.DialogFlags.MODAL, 
                                 Gtk.MessageType.QUESTION, 
                                 Gtk.ButtonsType.OK_CANCEL, 
                                 "Are you SURE you want to quit?")
         msg.format_secondary_text("We were having SO much fun......")
+        msg.set_title("Exit Program?")
         response = msg.run()
         if response == Gtk.ResponseType.OK:
             '''
@@ -268,7 +269,7 @@ class MyData:
         if self.validate_retry:
             self.treeview.grab_focus()
             self.edit_entry = cell_editable
-            if self.CurrentRecordsStore.get_column_type(cell.get_data("column_number")) == GObject.TYPE_INT:
+            if self.CurrentRecordsStore.get_column_type(cell.column_number) == GObject.TYPE_INT:
                 self.invalid_text_for_retry = str(self.invalid_text_for_retry)
             self.edit_entry.set_text(self.invalid_text_for_retry)
             self.validate_retry = False
@@ -288,7 +289,7 @@ class MyData:
         parameter needed to obtain the iterator required to fetch the preexisting
         data for this cell from the model.
         '''
-        col_num = cell.get_data("column_number")
+        col_num = cell.column_number
         cell.set_property("text", self.CurrentRecordsStore.get_value(my_iter, col_num))
               
     def validation_on_edited(self, cell, path, text):       
@@ -301,7 +302,7 @@ class MyData:
         place in the list of renderers, but the approach taken here is more
         generalized.
         '''
-        col_num = cell.get_data("column_number")
+        col_num = cell.column_number
         '''
         The "text" parameter emitted with the "edited" signal is a str representation
         of the new data the user entered into the edited cell. If the relevant column 
@@ -330,7 +331,7 @@ class MyData:
         if self.ErrorCheck(col_num, text):
             self.invalid_text_for_retry = text
             self.validate_retry = True
-            GObject.idle_add(self.restart_edit, path, cell.get_data("column_obj"))
+            GObject.idle_add(self.restart_edit, path, cell.column_obj)
             '''
             This is a bit of a hack to get around a long-standing bug in Gtk.
             The set_cursor method called in restart_edit destroys the Gtk.Entry
@@ -547,6 +548,7 @@ class MyData:
                                         Gtk.ResponseType.OK))
             dialog.set_modal(True)
             dialog.set_local_only(True)
+            dialog.set_do_overwrite_confirmation(True)
             dat_filter = Gtk.FileFilter()
             dat_filter.set_name(".dat files")
             dat_filter.add_pattern("*.dat")
@@ -678,7 +680,7 @@ class MyData:
                 col_num) == GObject.TYPE_STRING:
             '''If column calls for a string, it cannot be empty '''
             if not text:
-                msg = Gtk.MessageDialog(self.window, Gtk.DialogFlags.MODAL,
+                msg = Gtk.MessageDialog(None, Gtk.DialogFlags.MODAL,
                                 Gtk.MessageType.ERROR, Gtk.ButtonsType.OK,
                                 "Invalid or incomplete %s entry." % 
                                 self.CurrentRecordsStore.names[col_num])
@@ -696,7 +698,7 @@ class MyData:
             we check here for the sake of completeness.
             '''
             if ((not isinstance(text, int)) or ((text < 1) or (text > 4))):
-                msg = Gtk.MessageDialog(self.window, Gtk.DialogFlags.MODAL,
+                msg = Gtk.MessageDialog(None, Gtk.DialogFlags.MODAL,
                     Gtk.MessageType.ERROR, Gtk.ButtonsType.OK,
                     "Priority value must be an integer between 1 and 4.")
                 msg.set_title("Priority Entry Error!")
@@ -706,7 +708,7 @@ class MyData:
             else:
                 return False
         else:
-            msg = Gtk.MessageDialog(self.window, Gtk.DialogFlags.MODAL,
+            msg = Gtk.MessageDialog(None, Gtk.DialogFlags.MODAL,
                                 Gtk.MessageType.ERROR, Gtk.ButtonsType.OK,
                                 "Unknown Data Type Entered.")
             msg.set_title("Unknown Data Type Error!")

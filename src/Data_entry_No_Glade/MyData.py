@@ -200,8 +200,10 @@ class MyData:
             though, so watch for whatever facility is offered to replace that part of the
             API.
             '''
-            self.renderer[i].set_data("column_obj", column)
-            self.renderer[i].set_data("column_number", i)
+ #           self.renderer[i].set_data("column_obj", column)
+            self.renderer[i].column_obj = column
+#            self.renderer[i].set_data("column_number", i)
+            self.renderer[i].column_number = i
             
  #           column.set_cell_data_func(self.renderer[i], self.validation_on_cell_data)
  # Line commented out above sets a custom function to determine what and how to display as data
@@ -276,20 +278,20 @@ class MyData:
         saved.
         '''
         
-        if not self.disk_file:
+        if not self.disk_file and len(self.CurrentRecordsStore) > 0:
             if len(self.CurrentRecordsStore) > 1:
                 plural = True
-            elif len(self.CurrentRecordsStore) > 0:
+            else:
                 plural = False
-                
             self.save_unsaved(plural)
         
         ''' Throw up a dialog asking if the user really wants to quit.'''
-        msg = Gtk.MessageDialog(self.window, Gtk.DialogFlags.MODAL,
+        msg = Gtk.MessageDialog(None, Gtk.DialogFlags.MODAL,
                                 Gtk.MessageType.QUESTION,
                                 Gtk.ButtonsType.OK_CANCEL,
                                 "Are you SURE you want to quit?")
         msg.format_secondary_text("We were having SO much fun......")
+        msg.set_title("Exit Program?")
         response = msg.run()
         if response == Gtk.ResponseType.OK:
             '''
@@ -322,13 +324,12 @@ class MyData:
                       'status': '',
                       'priority': 1.0,
                       'focus': None }
-                                       
-            '''
-            We pass the ListStore we're using as a parameter to allow for eventual use
-            of multiple ListStores.
-            '''
         
         record = AddRecordDialog(self.CurrentRecordsStore, fields)
+        '''
+        We pass the ListStore we're using as a parameter to allow for eventual use
+        of multiple ListStores.
+        '''
 
         if record == None:
             '''
@@ -395,7 +396,7 @@ class MyData:
         if self.validate_retry:
             self.treeview.grab_focus()
             self.edit_entry = cell_editable
-            if self.CurrentRecordsStore.get_column_type(cell.get_data("column_number")) == GObject.TYPE_INT:
+            if self.CurrentRecordsStore.get_column_type(cell.column_number) == GObject.TYPE_INT:
                 self.invalid_text_for_retry = str(self.invalid_text_for_retry)
             self.edit_entry.set_text(self.invalid_text_for_retry)
             self.validate_retry = False
@@ -412,31 +413,33 @@ class MyData:
         The treeview's selection mode is set to MULTIPLE, but if we're editing a
         cell, only a single row will have been selected. This gives us a single-
         member list of paths. so we subscript the selection to get the path
-        parameter needed to obtain the iterator required to fetch the preexisting
+        parameter needed to obtain the iterator required to fetch the pre-existing
         data for this cell from the model.
         '''
-        col_num = cell.get_data("column_number")
+        col_num = cell.column_number
         cell.set_property("text", self.CurrentRecordsStore.get_value(my_iter, col_num))
               
     def validation_on_edited(self, cell, path, text):       
         '''        
         The "path" parameter emitted with the signal contains a str reference to
-        the row number of the cell that produced the signal.The widget parameter
-        is the CellRenderer that produced the "edited" signal; its column number
-        is carried in the "column number" key we associated with it earlier with
-        the set_data() method. We could get the column number from the widget's
-        place in the list of renderers, but the approach taken here is more
-        generalized.
+        the row number of the cell that produced the signal.The cell parameter
+        is the CellRenderer for the edited cell that produced the "edited" signal;
+        the column number of the edited cell is carried in the "column number"
+        key we associated with the CellRenderer earlier with the set_data() method.
+        We could get the column number from the Cellrenderer's place in the list
+        of renderers, but the approach taken here is more generalized.
         '''
-        col_num = cell.get_data("column_number")
+        col_num = cell.column_number
         '''
         The "text" parameter emitted with the "edited" signal is a str representation
         of the new data the user entered into the edited cell. If the relevant column 
         in the ListStore is expecting an int, we need to cast the str as an int. The
         SpinButton used for entry of data in the Priority column ensures that "text"
         will always be a str representation of a double between 1.0 and 4.0,
-        inclusive, so we need only cast it as an int - no bounds checking needed
-        here.
+        inclusive, so long as the user only clicks on the + and - buttons, but it is
+        possible to double-click on the value entered into the SpinButton and use the
+        keyboard to input a non-numeric or out-of-bounds number. The ErrorCheck function
+        should catch such an error.
         '''
         if text.isdigit():
             text = int(text)
@@ -457,21 +460,21 @@ class MyData:
         if self.ErrorCheck(col_num, text):
             self.invalid_text_for_retry = text
             self.validate_retry = True
-            GObject.idle_add(self.restart_edit, path, cell.get_data("column_obj"))
+            GObject.idle_add(self.restart_edit, path, cell.column_obj)
             '''
             This is a bit of a hack to get around a long-standing bug in Gtk.
             The set_cursor method called in restart_edit destroys the Gtk.Entry
             in which editing had been occurring and causes an "edited" signal
             to be emitted. Without the delay caused by wrapping the set_cursor
-            method in the restart_edit method embedded in a call to 
+            call in the restart_edit method embedded in a call to 
             GObject.idle_add(), however, the "edited" signal gets sent before
             the Entry gets destroyed, breaking the CellRenderer and its connection
             to the underlying model's data. See www.gtkforums.com/viewtopic.php?t=4619
-            from December 2009! One can click again on the cell and enter a value,
+            (from December 2009!). One can click again on the cell and enter a value,
             but the cell will thereafter ALWAYS display ONLY that value, even when
             rows or columns get shuffled. GObject.idle_add() makes the call to
             set_cursor() asynchronously issue from the main loop's thread rather than
-            synchronously, as before.
+            synchronously using a separate thread.
             '''
 #            self.treeview.set_cursor(Gtk.TreePath.new_from_string(path),
 #                                             cell.get_data("column_obj"),
@@ -675,6 +678,7 @@ class MyData:
                                         Gtk.ResponseType.OK))
             dialog.set_modal(True)
             dialog.set_local_only(True)
+            dialog.set_do_overwrite_confirmation(True)
             dat_filter = Gtk.FileFilter()
             dat_filter.set_name(".dat files")
             dat_filter.add_pattern("*.dat")
@@ -789,12 +793,14 @@ class MyData:
         Tell the user how to use the program.
         '''
         instructions = "To start, either open a data file or create one" + \
-        " by clicking 'Add Record.'\n All record fields are mandatory;" + \
-        "Priority must be between 1 and 4,\ninclusive. Select records" + \
+        " by clicking 'Add Record.'\nAll record fields are mandatory;" + \
+        " Priority must be between 1 and 4,\ninclusive. Select records" + \
         " with the mouse and click 'Delete Records'\nor select the " + \
         "'Delete' menu item to remove them. Double click on\ndata fields" + \
-        " to edit them; hit Enter or Tab to save the edited record.\nUse" + \
-        " the 'Save' or 'Save As' menuitems to save your entries to a file."
+        " to edit them; hit Enter or Tab or click another cell in the\n" + \
+        "chart to save the edited record. Hit Esc or click outside the chart\n" +\
+        "to cancel edits and retrieve the old data. Use the 'Save'or 'Save As'\n" + \
+        "menuitems to save your entries to a file."
         
         msg = Gtk.MessageDialog(self.window, Gtk.DialogFlags.MODAL, 
                                 Gtk.MessageType.INFO, Gtk.ButtonsType.OK, 
@@ -812,7 +818,7 @@ class MyData:
                     col_num) == GObject.TYPE_STRING:
             '''If column calls for a string, it cannot be empty '''
             if not text:
-                msg = Gtk.MessageDialog(self.window, Gtk.DialogFlags.MODAL,
+                msg = Gtk.MessageDialog(None, Gtk.DialogFlags.MODAL,
                                    Gtk.MessageType.ERROR, Gtk.ButtonsType.OK,
                                    "Invalid or incomplete %s entry." % 
                                    self.CurrentRecordsStore.names[col_num])
@@ -827,10 +833,13 @@ class MyData:
             '''
             If column calls for a number, it must be between 1 and 4. The
             Spinbutton and its adjustment should guarantee compliance, but
-            we check here for the sake of completeness.
+            the user can enter improper values from the keyboard, so this
+            check is necessary (even though the SpinButton will insert the
+            default value when adding new records and revert to the pre-
+            existing value when editing the Priority of an existing record.
             '''
             if ((not isinstance(text, int)) or ((text < 1) or (text > 4))):
-                msg = Gtk.MessageDialog(self.window, Gtk.DialogFlags.MODAL,
+                msg = Gtk.MessageDialog(None, Gtk.DialogFlags.MODAL,
                         Gtk.MessageType.ERROR, Gtk.ButtonsType.OK,
                         "Priority value must be an integer between 1 and 4.")
                 msg.set_title("Priority Entry Error!")
@@ -859,11 +868,12 @@ class MyData:
         else:
             txt1 = "You have an unsaved data record."
             txt2 = "Do you wish to save it?"
-        msg = Gtk.MessageDialog(self.window, Gtk.DialogFlags.MODAL, 
+        msg = Gtk.MessageDialog(None, Gtk.DialogFlags.MODAL, 
                                 Gtk.MessageType.QUESTION, 
                                 Gtk.ButtonsType.OK_CANCEL, 
                                 txt1)
         msg.format_secondary_text(txt2)
+        msg.set_title("Unsaved Data!")
         response = msg.run()
         if response == Gtk.ResponseType.OK:
             '''
