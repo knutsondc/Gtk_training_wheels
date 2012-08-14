@@ -138,6 +138,7 @@ class MyData:
             need to click once to select the treeview and another couple
             times to start editing the content of a cell. 
             '''
+            self.CurrentRecordsStore.connect("sort-column-changed", self.on_sort_column_changed)
             self.disk_file = None
             self.validate_retry = False
             '''
@@ -151,16 +152,15 @@ class MyData:
             '''
            
     def on_window_delete(self, widget, event): # pylint: disable-msg = w0613
-        """When the user clicks the 'close window' gadget. """
         '''
+        When the user clicks the 'close window' gadget.
         First check for unsaved data and ask if it should be saved.
         '''
         if not self.disk_file and len(self.CurrentRecordsStore) > 0:
             if len(self.CurrentRecordsStore) > 1:
                 plural = True
             else:
-                plural = False
-                
+                plural = False           
             self.save_unsaved(plural)
         
         '''Throw up a dialog asking if the user really wants to quit.'''
@@ -189,34 +189,41 @@ class MyData:
     
     def on_add_button_clicked(self, widget, fields = None):
         '''
-        Method for adding records. We pass the ListStore we're using as
-        a parameter to allow for eventual use of multiple ListStores. The
-        fields param holds valid values the user enters in incomplete, invalid
-        entries for use in subsequent passes through this method.
-        ''' 
+        Method for adding records.
+        '''
         if not fields:
+            '''
+            fields holds any valid values entered in any earlier
+            unsuccessful effort to add a new record. Not included
+            as a parameter to avoid using the same object in all
+            record creations and the side-effects to which that
+            could lead. 
+            '''
             fields = {'project':'',
-                      'status': '', 
+                      'status': '',
                       'priority': 1.0,
                       'focus': None }
         
         record = AddRecordDialog(self.CurrentRecordsStore, fields)
-        
+        '''
+        We pass the ListStore we're using as a parameter to allow for eventual use
+        of multiple ListStores.
+        '''
+
         if record == None:
             '''
-            If the user clicked "Cancel" in the Add Record dialog, just do
-            nothing and go back to where we were.
+            If the user clicked "Cancel" in the Add Record dialog, just do nothing and
+            go back to where we were.
             '''
             return
             '''
-            Check the proposed new record to see if the data are
-            valid - non-empty strings for the Project and Status columns
-            and an integer from 1 to 4 for Priority. If there are errors,
-            we again call the Add Record dialog, but with the values, if
-            any, the user supplied as the default values and the cursor
-            set in the first data entry field that caused the error check
-            to fail.
+            Check the proposed new record to see if the data are valid;non-empty strings
+            for Project and Status columns and an integer between 1 and 4 for Priority.
+            If there are errors, we again call the Add Record dialog, but with the values,
+            the user supplied as the default values and the cursor set in the first data
+            entry field that caused the error check to fail.
             '''
+
         elif self.ErrorCheck(0, record['project']):
             record['focus'] = 'project'
             self.on_add_button_clicked(widget, record)
@@ -230,16 +237,16 @@ class MyData:
             self.on_add_button_clicked(widget, record)            
         else:
             '''
-            If the data are valid, append them to the ListStore and,
-            if a disk file is open for this ListStore, save the new
-            record to that, too. We're not concerned with sorting and
-            order in these data stores here - just add the new record
-            to the end.
+            If the data are valid, append them to the ListStore and, if a disk
+            file is open for this ListStore, save the new record to that, too.
+            We're not concerned with sorting and order in these data stores
+            here - just add the new record to the end.
             '''
             row = [record['project'], record['status'], record['priority']]
             self.CurrentRecordsStore.append(row) # pylint: disable-msg = E1103
             if self.disk_file:
-                self.disk_file["store"].append(row)
+#                self.disk_file["store"].append(row)
+                self.rewrite_disk_file()
                 
 # The commented out method below caught Tab key presses and made sure they got
 # handled the same as Enter key strokes. Now not necessary as the restart_editing()
@@ -387,7 +394,11 @@ class MyData:
         record selected and use that to derive the current row number of
         each record selected for use as the index to delete the disk file
         copy (if any) of the selected record and then delete the corres-
-        ponding record from the ListStore. Again, we sync() the
+        ponding record from the ListStore. Note that every time there's a 
+        change to the ListStore through a sort or addition of a record, the
+        entire disk file gets rewritten to ensure that the ListStore and the
+        disk file copy of the records are in the same order, which allows this
+        approach to record deletion to work correctly. Again, we sync() the
         disk file immediately to ensure all deletions are written to the
         disk file.
         
@@ -432,19 +443,18 @@ class MyData:
                     disk_file representation of it in disk_file['store'].
                     '''
                 del self.CurrentRecordsStore[row.get_path().get_indices()[0]]
-        '''
-        Delete method using iters on the ListStore:
-               
-        for i in [self.CurrentRecordsStore.get_iter(row)
-         for row in self.paths_selected]: #pylint: disable-msg = E1103
-            if i:
-                if self.disk_file:                    
-                    del self.disk_file["store"
-                        ][self.CurrentRecordsStore.get_path(i).get_indices(
-                        )[0]]
-                    self.disk_file.sync()
-                self.CurrentRecordsStore.remove(i) #pylint: disable-msg=E1103
-        '''
+                
+       
+##        Delete method using iters on the ListStore:
+#        for i in [self.CurrentRecordsStore.get_iter(row) for row in self.paths_selected]: #pylint: disable-msg = E1103
+#            if i:
+#                if self.disk_file:                   
+#                    del self.disk_file["store"
+#                        ][self.CurrentRecordsStore.get_path(i).get_indices(
+#                        )[0]]
+#                    self.disk_file.sync()
+#                self.CurrentRecordsStore.remove(i) #pylint: disable-msg=E1103
+                
         '''
         Shrink the window down to only the size needed to display the remaining
         records. The method invoked below hides the window and reopens it to the
@@ -454,6 +464,50 @@ class MyData:
         
         self.window.reshow_with_initial_size()
         
+    def on_sort_column_changed(self, widget):
+        '''
+        This function coded separately just in case there's something
+        else we might in the future want to do on a sort.
+        For some unknown reason, in this glade version of the program,
+        the sort-column-changed signal gets fired three times every time
+        the sort order gets changed. As now written, this function still
+        produces the right result, but there's a lot of unnecessary work
+        being done.
+        '''
+        if self.disk_file:
+            GObject.idle_add(self.rewrite_disk_file)
+            '''
+            Wrapping call to rewrite_disk_file in GObject.idle_add needed to avoid
+            inconsistency between disk_file and data store. Without this, clicking
+            on a column heading always generates a sort-column-change signal but
+            often the first such click doesn't actually change the sort order in the
+            treeview - the signal causes the order in the disk file to change,
+            but the ListStore order doesn't, hence the inconsistency. For the Delete
+            Records button to work correctly, the ListStore and disk file records
+            must always be in the same order. Calling rewrite_disk_file inside a call
+            to idle_add() seems to insure that the disk_file will not be reordered
+            unless the ListStore has been reordered.
+            '''
+    def rewrite_disk_file(self):
+        '''
+        Function to rewrite the disk file to keep it in the same order
+        as the ListStore after a sort column change or addition of a
+        new record with a sort order in effect. We first erase the
+        existing disk file.
+        '''
+        del self.disk_file["store"][:]
+        self.disk_file.sync()
+        '''
+        After erasing the disk_file, copy the reordered ListStore to the disk_file.
+        '''
+        for row in self.CurrentRecordsStore:
+            self.disk_file["store"].append(row[:])
+            self.disk_file.sync()
+        return False
+        '''
+        This function called from GObject.idle_add, returns False so that
+        it doesn't run forever.
+        '''              
     def on_selection_changed(self, selection):        
         '''
         The TreeViewSelection contains references to the rows in the TreeView the
@@ -464,13 +518,12 @@ class MyData:
          self.selection.get_selected_rows()
                 
     def on_new_menu_item_activate(self, widget):
+        
         '''
-        Go back to where we were when the program first opened: close any open
-        disk files; otherwise check for unsaved data,  ask user if he wishes
-        to save it, and save to disk if he does. Then wipe the ListStore (and,
-        consequently, the TreeView, clean. Change the disk_file to None so we
-        won't try to write to a closed file! Change the window title to reflect
-        we're now working on unsaved data.
+        Go back to where we were when the program first opened: close and open
+        disk files and wipe the ListStore (and, consequently, the TreeView, clean.
+        Change the disk_file to None so we won't try to write to a closed file!
+        Change the window title to reflect we're now working on unsaved data.
         '''
         if self.disk_file:
             shelve.Shelf.close(self.disk_file)
@@ -479,23 +532,25 @@ class MyData:
             self.save_unsaved(plural = True)
         elif len(self.CurrentRecordsStore) > 0:
             self.save_unsaved(plural = False)
-        self.CurrentRecordsStore.clear() # pylint: disable-msg=E1103
+        self.CurrentRecordsStore.clear() #pylint: disable-msg=E1103
         self.window.reshow_with_initial_size()
         self.window.set_title("Unsaved Data File")            
-
+    
     def on_open_menu_item_activate(self, widget):
         '''
-        Open an existing file. First, check for unsaved data.
+        Open an existing file. First, check to see if there's unsaved data
+        and ask the user if he wants to save it.
         '''
-        if not self.disk_file:
+        if not self.disk_file and len(self.CurrentRecordsStore) > 0:
             if len(self.CurrentRecordsStore) > 1:
-                self.save_unsaved(plural = True)
-            elif len(self.CurrentRecordsStore) > 0:
-                self.save_unsaved(plural = False)
-        dialog = Gtk.FileChooserDialog("Open File", self.window, 
-                                       Gtk.FileChooserAction.OPEN, 
-                                       (Gtk.STOCK_CANCEL, 
-                                        Gtk.ResponseType.CANCEL, 
+                self.save_unsaved(True)
+            else:
+                self.save_unsaved(False)
+                
+        dialog = Gtk.FileChooserDialog("Open File", self.window,
+                                       Gtk.FileChooserAction.OPEN,
+                                       (Gtk.STOCK_CANCEL,
+                                        Gtk.ResponseType.CANCEL,
                                         Gtk.STOCK_OPEN, Gtk.ResponseType.OK))
         dialog.set_modal(True)
         dialog.set_local_only(True)
@@ -511,10 +566,11 @@ class MyData:
         if response == Gtk.ResponseType.OK:
             '''
             Before opening a file, close any file we presently have open
-            and wipe the ListStore..
+            and wipe the ListStore.
             '''
             if self.disk_file:
                 shelve.Shelf.close(self.disk_file)
+                self.disk_file = None
                 self.CurrentRecordsStore.clear()    #pylint: disable-msg = E1103
             try:
                 self.disk_file = shelve.open(dialog.get_filename(),
@@ -533,8 +589,8 @@ class MyData:
             except Exception as inst:
                 msg = Gtk.MessageDialog(None, Gtk.DialogFlags.MODAL,
                                    Gtk.MessageType.ERROR, Gtk.ButtonsType.OK,
-                                   "Couldn't open file: %s error." % 
-                                   type(inst))
+                                   "Couldn't open file {0}: {1} error." .format( 
+                                   dialog.get_filename(), type(inst)))
                 msg.format_secondary_text(inst)
                 msg.set_title("File Open Error!")
                 msg.run()
@@ -542,6 +598,7 @@ class MyData:
             dialog.destroy()
         elif response == Gtk.ResponseType.CANCEL:
             dialog.destroy()
+            
     def on_save_menu_item_activate(self, widget):
         '''
         If we have a file open already, just update it.
@@ -589,8 +646,8 @@ class MyData:
                 except Exception as inst:
                     msg = Gtk.MessageDialog(None, Gtk.DialogFlags.MODAL,
                                             Gtk.MessageType.ERROR, Gtk.ButtonsType.OK,
-                                            "Couldn't save file: %s error." % 
-                                            type(inst))
+                                            "Couldn't save file {0}: {1} error." .format( 
+                                            dialog.get_filename(),type(inst)))
                     msg.format_secondary_text(inst)
                     msg.set_title("Error Saving File!")
                     msg.run()
@@ -642,8 +699,8 @@ class MyData:
             except Exception as inst:
                     msg = Gtk.MessageDialog(None, Gtk.DialogFlags.MODAL,
                                             Gtk.MessageType.ERROR, Gtk.ButtonsType.OK,
-                                            "Couldn't save file: %s error." % 
-                                            type(inst))
+                                            "Couldn't save file {0}: {1} error." .format( 
+                                            dialog.get_filename(),type(inst)))
                     msg.format_secondary_text(inst)
                     msg.set_title("Error Saving File!")
                     msg.run()
