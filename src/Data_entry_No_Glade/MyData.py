@@ -3,7 +3,7 @@ Main program control file for this toy project to demonstrate entry of data
 records into a Gtk.ListStore, display the records and allow the user to edit
 and delete them. This version does not rely upon glade at all.
 """
-from Model import RecordsStore, AddRecordDialog #@UnresolvedImport
+from Model import AddRecordDialog #@UnresolvedImport
 import os
 import shelve
 from gi.repository import Gtk       #@UnresolvedImport pylint: disable-msg=E0611
@@ -156,7 +156,8 @@ class MyData:
         '''        
         types = [GObject.TYPE_STRING, GObject.TYPE_STRING, GObject.TYPE_INT]
         names = ["Project", "Status", "Priority"]
-        self.CurrentRecordsStore = RecordsStore(types, names)
+        self.CurrentRecordsStore = Gtk.ListStore(types[0], types[1], types[2])
+        self.CurrentRecordsStore.names = names
         self.treeview.set_model(self.CurrentRecordsStore)
         self.box.pack_start(self.treeview, True, True, 0)
         self.renderer = list()
@@ -591,6 +592,7 @@ class MyData:
         This function coded separately just in case there's something
         else we might in the future want to do on a sort.
         '''
+        print("Entered on_sort_column_changed.")
         if self.disk_file:
             GObject.idle_add(self.rewrite_disk_file)
             '''
@@ -614,12 +616,14 @@ class MyData:
         '''
         del self.disk_file["store"][:]
         self.disk_file.sync()
+        print("disk file after del: {0}".format(self.disk_file['store']))
         '''
         After erasing the disk_file, copy the reordered ListStore to the disk_file.
         '''
         for row in self.CurrentRecordsStore:
             self.disk_file["store"].append(row[:])
             self.disk_file.sync()
+            print("disk file after append: {0}".format(self.disk_file['store']))
         return False
         '''
         This function called from GObject.idle_add, returns False so that

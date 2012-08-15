@@ -2,10 +2,9 @@
 Main program control file for this toy project to demonstrate entry of data 
 records into a Gtk.ListStore, display the records and allow the user to edit
 and delete them. This version relies upon a glade .xml file for several major
-user interface windows and dialogs.
+user interface elements and the ListStore definition.
 """
-
-from Model import RecordsStore, AddRecordDialog #@UnresolvedImport
+from Model import AddRecordDialog #@UnresolvedImport
 import os
 import shelve
 from gi.repository import Gtk       #@UnresolvedImport pylint: disable-msg=E0611
@@ -29,12 +28,26 @@ class MyData:
         records is not. It follows here:
         '''
         self.treeview = builder.get_object("treeview")
+        project_column = builder.get_object("ProjectColumn")
+        project_renderer = builder.get_object("ProjectCellRendererText")
+        project_renderer.column_obj = project_column
+        project_renderer.column_number = 0
+        status_column = builder.get_object("StatusColumn")
+        status_renderer = builder.get_object("StatusCellRendererText")
+        status_renderer.column_obj = status_column
+        status_renderer.column_number = 1
+        priority_column = builder.get_object("PriorityColumn")
+        priority_renderer = builder.get_object("PriorityCellRendererSpin")
+        priority_renderer.column_obj = priority_column
+        priority_renderer.column_number = 2
         '''
         The following item later holds references to the data records the user has 
         selected in the treeview and, by extension, the Gtk.ListStore from which
         the data in those records were taken.
         '''
         self.selection = builder.get_object("treeview-selection")
+        self.CurrentRecordsStore = builder.get_object("CurrentRecordsStore")
+        self.CurrentRecordsStore.names = ["Project", "Status", "Priority"]
         '''
         Make sure that the reference to selected records is empty at program start
         '''
@@ -42,115 +55,19 @@ class MyData:
         '''
         No disk storage of records at program start.
         '''
-        self.disk_file = None        
-        
+        self.disk_file = None
+        self.validate_retry = False
+        '''
+        Flag indicating whether an edit is a retry after an attempt
+        to enter invalid data.
+        '''
+        self.invalid_text_for_retry = ""
+        '''
+        Initialize variable to hold the invalid text attempted to be 
+        entered in an earlier unsuccessful edit.
+        '''
         builder.connect_signals(self)
-        '''
-        Eventually the following three lines setting up a fixed three-field 
-        RecordsStore will be replaced with code offering the user the choice of
-        opening an existing RecordsStore or creating a new one with a user-set
-        number and type of data fields (columns).
-        '''
-        types = [GObject.TYPE_STRING, GObject.TYPE_STRING, GObject.TYPE_INT]
-        names = ["Project", "Status", "Priority"]
-        self.CurrentRecordsStore = RecordsStore(types, names)
-        '''
-        Tell the TreeView from where to get its data to display.
-        '''
-        self.treeview.set_model(self.CurrentRecordsStore)
-
-        self.renderer = list()
-        '''
-        Create a list of CellRenderers equal to the number of data columns in the
-        ListStore so that when data cells get edited, we can detect in which column
-        the cell that produced the "edited" signal is found from the "widget" data 
-        contained in the "edited" signal. In this program, the assignment of 
-        CellRenderers to Columns is constant throughout. The "edited" signal emits 
-        a "path" value identifying the row in which the edited cell can be found.
-        '''
-        for i in range(len(names)):
-            '''
-            We want to use a SpinButton to edit the numeric data entered
-            into the Priority column, so we check for the data type of
-            the column so we can assign the appropriate CellRenderer to it.
-            '''    
-            if types[i] == GObject.TYPE_INT:
-                self.renderer.append(Gtk.CellRendererSpin())
-                '''
-                Attach the CellRendererSpin to the adjustment holding the
-                data defining the SpinButton's behavior. Adjustment object
-                holds the info defining the SpinButton used to enter
-                'Priority' values: current value, minimum, maximum, step,
-                page increment, and page size.
-                '''
-                self.renderer[i].set_property("adjustment", 
-                                         Gtk.Adjustment(1.0, 1.0, 4.0, 1.0, 4.0, 0.0))
-                
-                '''
-                Glade doesn't handle anything about TreeViewColumns or
-                CellRenderers, so we must.The Priority column shouldn't
-                expand, so we set that behavior here, too.
-                '''
-                expand = False
-            else:
-                self.renderer.append(Gtk.CellRendererText())
-                '''All the other columns receive text and need to expand.'''
-                expand = True
-                
-            self.renderer[i].set_property("editable", True)
-            self.renderer[i].connect("editing-started", self.validation_on_editing_started)
-            self.renderer[i].connect("editing-canceled", self.validation_on_editing_cancelled)
-            self.renderer[i].connect("edited", self.validation_on_edited)
-            column = Gtk.TreeViewColumn(names[i], self.renderer[i], text = i)
-
-            '''
-            Permanently associate this CellRenderer with the column it's
-            assigned to, which matches the column number in the ListStore.
-            This makes retrieving the CellRenderer from signal and event
-            messages much easier and ensures that any reordering of columns
-            in the TreeView will not interfere. the GObject.set_data and
-            .get_data methods may be dropped from the next version of
-            PyGtk/PyGObject, though, so watch for whatever facility is
-            offered to replace that part of the API.    
-            '''
-            self.renderer[i].column_obj = column
-            self.renderer[i].column_number = i
-            column.set_sizing(Gtk.TreeViewColumnSizing.AUTOSIZE)
-            column.set_clickable(True)
-            column.set_resizable(True)
-            column.set_reorderable(True)
-            '''
-            These methods identify the column of the ListStore upon whose
-            values the column in the treeview should be sorted and that a
-            sort indicator showing sort order should be attached to the 
-            header when clicked to sort on that column's values. No need to
-            have our own handler for the "column clicked" signal - Gtk
-            apparently takes care of things behind the scenes. 
-            '''
-            column.set_sort_column_id(i)
-            column.set_sort_indicator(True)
-            column.set_expand(expand)
-            
-            '''Append the column to the TreeView so it will be displayed.'''
-            self.treeview.append_column(column)
-            '''
-            Catching the mouse button presses speeds cell selection - no
-            need to click once to select the treeview and another couple
-            times to start editing the content of a cell. 
-            '''
-            self.CurrentRecordsStore.connect("sort-column-changed", self.on_sort_column_changed)
-            self.disk_file = None
-            self.validate_retry = False
-            '''
-            Flag indicating whether an edit is a retry after an attempt
-            to enter invalid data.
-            '''
-            self.invalid_text_for_retry = ""
-            '''
-            Initialize variable to hold the invalid text attempted to be 
-            entered in an earlier unsuccessful edit.
-            '''
-           
+        
     def on_window_delete(self, widget, event): # pylint: disable-msg = w0613
         '''
         When the user clicks the 'close window' gadget.
