@@ -152,7 +152,7 @@ class MyData:
         self.selection.connect("changed", self.on_selection_changed)
         self.paths_selected = None
         '''
-        Set up the modified ListStore and connect the TreeView to it.
+        Set up the ListStore and connect the TreeView to it.
         '''        
         types = [GObject.TYPE_STRING, GObject.TYPE_STRING, GObject.TYPE_INT]
         names = ["Project", "Status", "Priority"]
@@ -201,9 +201,7 @@ class MyData:
             though, so watch for whatever facility is offered to replace that part of the
             API.
             '''
- #           self.renderer[i].set_data("column_obj", column)
             self.renderer[i].column_obj = column
-#            self.renderer[i].set_data("column_number", i)
             self.renderer[i].column_number = i
             
  #           column.set_cell_data_func(self.renderer[i], self.validation_on_cell_data)
@@ -592,7 +590,6 @@ class MyData:
         This function coded separately just in case there's something
         else we might in the future want to do on a sort.
         '''
-        print("Entered on_sort_column_changed.")
         if self.disk_file:
             GObject.idle_add(self.rewrite_disk_file)
             '''
@@ -616,14 +613,12 @@ class MyData:
         '''
         del self.disk_file["store"][:]
         self.disk_file.sync()
-        print("disk file after del: {0}".format(self.disk_file['store']))
         '''
         After erasing the disk_file, copy the reordered ListStore to the disk_file.
         '''
         for row in self.CurrentRecordsStore:
             self.disk_file["store"].append(row[:])
             self.disk_file.sync()
-            print("disk file after append: {0}".format(self.disk_file['store']))
         return False
         '''
         This function called from GObject.idle_add, returns False so that
