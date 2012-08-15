@@ -110,7 +110,6 @@ class MyData:
         quit_menu_item.set_always_show_image(True)
         quit_menu_item.connect("activate", self.on_quit_menu_item_activate)
         filemenu.add(quit_menu_item)
-
         ''' 
         Edit menu removed - the Gnome Desktop clipboard already supplies
         all the intended functionality.
@@ -151,6 +150,9 @@ class MyData:
         self.selection.set_mode(Gtk.SelectionMode.MULTIPLE)
         self.selection.connect("changed", self.on_selection_changed)
         self.paths_selected = None
+        '''
+        Make sure that the reference to selected records is empty at program start
+        '''
         '''
         Set up the ListStore and connect the TreeView to it.
         '''        
@@ -221,24 +223,27 @@ class MyData:
             column.set_sizing(Gtk.TreeViewColumnSizing.AUTOSIZE)
             column.set_clickable(True)
             column.set_resizable(True)
-            column.set_reorderable(True)
-            
+            column.set_reorderable(True)         
             '''
             The next two methods identify the ListStore column upon whose values the column
             in the treeview should be sorted and determine whether a sort indicator showing
             sort order should be attached to the header when clicked to sort on that column's
             values. No need to have our own handler for the "column clicked" signal; Gtk
             apparently takes care of things behind the scenes.
-            '''
-          
+            '''       
             column.set_sort_column_id(i)
             column.set_sort_indicator(True)
-            column.set_expand(expand)
-            
+            column.set_expand(expand)       
             '''Append the column to the TreeView.'''
             self.treeview.append_column(column)
         self.CurrentRecordsStore.connect("sort-column-changed", self.on_sort_column_changed)
+        '''
+        Sort changes need to be propagated to the disk file, if any.
+        '''
         self.disk_file = None
+        '''
+        Make sure the reference to any disk file is empty at program start.
+        '''
         self.validate_retry = False
         '''
         Flag indicating whether an edit is a retry after an attempt
@@ -597,12 +602,12 @@ class MyData:
             inconsistency between disk_file and data store. Without this, clicking
             on a column heading always generates a sort-column-change signal but
             often the first such click doesn't actually change the sort order in the
-            treeview - the signal causes the order in the disk file to change,
-            but the ListStore order doesn't, hence the inconsistency. For the Delete
-            Records button to work correctly, the ListStore and disk file records
-            must always be in the same order. Calling rewrite_disk_file inside a call
-            to idle_add() seems to insure that the disk_file will not be reordered
-            unless the ListStore has been reordered.
+            treeview, but it DOES cause the order in the disk file to change, hence
+            the inconsistency. For the Delete Records button to work correctly, the
+            ListStore and disk file records must always be in the same order. Calling
+            rewrite_disk_file inside a call to idle_add() seems to insure that the
+            disk_file will not be reordered unless the ListStore has actually been
+            reordered.
             '''
     def rewrite_disk_file(self):
         '''

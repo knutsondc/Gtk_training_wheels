@@ -47,15 +47,15 @@ class MyData:
         '''
         self.selection = builder.get_object("treeview-selection")
         self.CurrentRecordsStore = builder.get_object("CurrentRecordsStore")
-        self.CurrentRecordsStore.names = ["Project", "Status", "Priority"]
+        self.CurrentRecordsStore.names = ["Project", "Status", "Priority"]     
+        self.paths_selected = None
         '''
         Make sure that the reference to selected records is empty at program start
         '''
-        self.paths_selected = None
+        self.disk_file = None
         '''
         No disk storage of records at program start.
         '''
-        self.disk_file = None
         self.validate_retry = False
         '''
         Flag indicating whether an edit is a retry after an attempt
@@ -398,12 +398,12 @@ class MyData:
             inconsistency between disk_file and data store. Without this, clicking
             on a column heading always generates a sort-column-change signal but
             often the first such click doesn't actually change the sort order in the
-            treeview - the signal causes the order in the disk file to change,
-            but the ListStore order doesn't, hence the inconsistency. For the Delete
-            Records button to work correctly, the ListStore and disk file records
-            must always be in the same order. Calling rewrite_disk_file inside a call
-            to idle_add() seems to insure that the disk_file will not be reordered
-            unless the ListStore has been reordered.
+            treeview, but it DOES cause the order in the disk file to change, hence
+            the inconsistency. For the Delete Records button to work correctly, the
+            ListStore and disk file records must always be in the same order. Calling
+            rewrite_disk_file inside a call to idle_add() seems to insure that the
+            disk_file will not be reordered unless the ListStore has actually been
+            reordered.
             '''
     def rewrite_disk_file(self):
         '''
