@@ -400,10 +400,9 @@ class MyData:
 #        cell_editable.connect("key-press-event", self.on_keypress_event)
         if self.validate_retry:
             self.treeview.grab_focus()
-            self.edit_entry = cell_editable
             if self.CurrentRecordsStore.get_column_type(cell.column_number) == GObject.TYPE_INT:
                 self.invalid_text_for_retry = str(self.invalid_text_for_retry)
-            self.edit_entry.set_text(self.invalid_text_for_retry)
+            cell_editable.set_text(self.invalid_text_for_retry)
             self.validate_retry = False
             self.invalid_text_for_retry = ""
 
@@ -421,8 +420,7 @@ class MyData:
         parameter needed to obtain the iterator required to fetch the pre-existing
         data for this cell from the model.
         '''
-        col_num = cell.column_number
-        cell.set_property("text", self.CurrentRecordsStore.get_value(my_iter, col_num))
+        cell.set_property("text", self.CurrentRecordsStore.get_value(my_iter, cell.column_number))
               
     def validation_on_edited(self, cell, path, text):       
         '''        
@@ -433,9 +431,7 @@ class MyData:
         key we associated with the CellRenderer earlier with the set_data() method.
         We could get the column number from the Cellrenderer's place in the list
         of renderers, but the approach taken here is more generalized.
-        '''
-        col_num = cell.column_number
-        '''
+        
         The "text" parameter emitted with the "edited" signal is a str representation
         of the new data the user entered into the edited cell. If the relevant column 
         in the ListStore is expecting an int, we need to cast the str as an int. The
@@ -462,7 +458,7 @@ class MyData:
             column we need. Note that  set_data and get_data may be removed from Gtk
             in the future and replaced with the ability to set_attr and get_attr.
             '''
-        if self.ErrorCheck(col_num, text):
+        if self.ErrorCheck(cell.column_number, text):
             self.invalid_text_for_retry = text
             self.validate_retry = True
             GObject.idle_add(self.restart_edit, path, cell.column_obj)
@@ -493,9 +489,9 @@ class MyData:
         that's needed. We sync() the shelve file immediately, just to make sure all 
         new data is written safely to disk.
             '''
-            self.CurrentRecordsStore[path][col_num] = text
+            self.CurrentRecordsStore[path][cell.column_number] = text
             if self.disk_file:
-                self.disk_file["store"][int(path)][col_num] = text
+                self.disk_file["store"][int(path)][cell.column_number] = text
                 self.disk_file.sync()
             
     def restart_edit(self, path, col):
@@ -716,6 +712,7 @@ class MyData:
                 msg.run()
                 msg.destroy()            
             dialog.destroy()
+            self.window.reshow_with_initial_size()
         elif response == Gtk.ResponseType.CANCEL:
             dialog.destroy()
             
@@ -868,7 +865,7 @@ class MyData:
         '''
         Tell the user how to use the program.
         '''
-        instructions = "To start, either open a data file or create one" + \
+        instructions = "To start, open a data file or create one" + \
         " by clicking 'Add Record.'\nAll record fields are mandatory;" + \
         " Priority must be between 1 and 4,\ninclusive. Select records" + \
         " with the mouse and click 'Delete Records'\nor select the " + \
