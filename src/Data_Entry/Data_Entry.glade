@@ -331,6 +331,9 @@
                   <object class="GtkCellRendererToggle" id="CompletedCellRendererToggle">
                     <signal name="toggled" handler="on_completed_toggled" swapped="no"/>
                   </object>
+                  <attributes>
+                    <attribute name="active">3</attribute>
+                  </attributes>
                 </child>
               </object>
             </child>

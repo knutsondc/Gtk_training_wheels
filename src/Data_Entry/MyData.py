@@ -10,7 +10,7 @@ import shelve
 from gi.repository import Gtk       #@UnresolvedImport pylint: disable-msg=E0611
 from gi.repository import GdkPixbuf #@UnresolvedImport pylint: disable-msg=E0611
 from gi.repository import GObject   #@UnresolvedImport pylint: disable-msg=E0611
-from gi.repository import Pango   #@UnresolvedImport pylint: disable-msg=E0611
+from gi.repository import Pango     #@UnresolvedImport pylint: disable-msg=E0611
 
 class MyData:
     """ 
