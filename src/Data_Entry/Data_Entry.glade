@@ -236,7 +236,6 @@
             <child>
               <object class="GtkTreeViewColumn" id="ProjectColumn">
                 <property name="resizable">True</property>
-                <property name="sizing">autosize</property>
                 <property name="title" translatable="yes">Project</property>
                 <property name="expand">True</property>
                 <property name="clickable">True</property>
@@ -265,7 +264,6 @@
             <child>
               <object class="GtkTreeViewColumn" id="StatusColumn">
                 <property name="resizable">True</property>
-                <property name="sizing">autosize</property>
                 <property name="title" translatable="yes">Status</property>
                 <property name="expand">True</property>
                 <property name="clickable">True</property>
@@ -301,7 +299,7 @@
                 <property name="sort_column_id">2</property>
                 <child>
                   <object class="GtkCellRendererSpin" id="PriorityCellRendererSpin">
-                    <property name="alignment">center</property>
+                    <property name="alignment">right</property>
                     <property name="background_gdk">#ffffffffffff</property>
                     <property name="editable">True</property>
                     <property name="font">Normal</property>
@@ -333,9 +331,6 @@
                   <object class="GtkCellRendererToggle" id="CompletedCellRendererToggle">
                     <signal name="toggled" handler="on_completed_toggled" swapped="no"/>
                   </object>
-                  <attributes>
-                    <attribute name="active">3</attribute>
-                  </attributes>
                 </child>
               </object>
             </child>

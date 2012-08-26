@@ -186,6 +186,7 @@ class MyData:
                 self.renderer[i].set_property("activatable", True)
                 self.renderer[i].connect("toggled", self.on_completed_toggled)
                 column = Gtk.TreeViewColumn(names[i], self.renderer[i], active = i)
+                column.set_resizable(False)
                 
             else:
                 
@@ -205,22 +206,20 @@ class MyData:
                                         1.0, 1.0, 4.0, 1.0, 4.0, 0.0))              
                     '''The Priority column shouldn't expand, so we set that behavior here, too.'''
                     expand = False
+                    column = Gtk.TreeViewColumn(names[i], self.renderer[i], text = i)
+                    column.set_resizable(False)
+                    
                 
                 
                 else:
                     '''The other two columns receive text and need to expand.'''
                     self.renderer.append(Gtk.CellRendererText())
                     expand = True
+                    column = Gtk.TreeViewColumn(names[i], self.renderer[i], text = i)
+                    column.set_resizable(True)
                 '''
                 Now comes the column and renderer configuration common to all columns
                 except the "Completed?" column.
-                '''
-                column = Gtk.TreeViewColumn(names[i], self.renderer[i], text = i)
-                '''
-                Permanently associate this CellRenderer with the column it's assigned to, 
-                which matches the column number in the ListStore. This makes retrieving the 
-                CellRenderer from signal and event messages much easier and ensures that any
-                reordering of columns in the TreeView will not interfere. 
                 '''
                 self.renderer[i].set_property("editable", True)
                 '''
@@ -239,18 +238,17 @@ class MyData:
             self.renderer[i].column_obj = column
             self.renderer[i].column_number = i
             '''
-            Provide an easy reference to the column in which the renderer appears as well as
-            that column's number - these items are required to locate cell data for deletion 
-            or editing.
+            Permanently associate this CellRenderer with the column it's assigned to, 
+            which matches the column number in the ListStore. This makes retrieving the 
+            CellRenderer from signal and event messages much easier and ensures that any
+            reordering of columns in the TreeView will not interfere. 
             '''
             
 #           column.set_cell_data_func(self.renderer[i], self.validation_on_cell_data)
 # Line commented out above sets a custom function to determine what and how to display as data
 # in the treeview. Not needed here because we need only display the bare data in the model.
 
-            column.set_sizing(Gtk.TreeViewColumnSizing.AUTOSIZE)
-            column.set_clickable(True)
-            column.set_resizable(True)
+            column.set_clickable(True)           
             column.set_reorderable(True)         
             '''
             The next two methods identify the ListStore column upon whose values the column
