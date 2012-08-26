@@ -38,6 +38,8 @@ def AddRecordDialog(recordsstore, fields = None):
     priority_adjustment = Gtk.Adjustment(1.0, 1.0, 4.0, 1.0, 0.0, 0.0 )
     priority_spin.set_adjustment(priority_adjustment)
     hbox.add(priority_spin)
+    toggle = Gtk.CheckButton("Complete?")
+    vbox.add(toggle)
     '''
     If the "focus" data fields has a value  when this function gets
     called, it means that the user tried at least once before and entered
@@ -64,6 +66,7 @@ def AddRecordDialog(recordsstore, fields = None):
         Adjustments return floats, but we need an int.
         '''
         fields['priority'] = int(priority_adjustment.get_value())
+        fields['completed'] = toggle.get_active()
         '''
         After submitting data to the caller, this dialog's work is done.
         '''

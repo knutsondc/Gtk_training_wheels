@@ -9,6 +9,7 @@ import shelve
 from gi.repository import Gtk       #@UnresolvedImport pylint: disable-msg=E0611
 from gi.repository import GdkPixbuf #@UnresolvedImport pylint: disable-msg=E0611
 from gi.repository import GObject   #@UnresolvedImport pylint: disable-msg=E0611
+from gi.repository import Pango     #@UnresolvedImport pylint: disable-msg=E0611
 
 class MyData:
 
@@ -156,9 +157,9 @@ class MyData:
         '''
         Set up the ListStore and connect the TreeView to it.
         '''        
-        types = [GObject.TYPE_STRING, GObject.TYPE_STRING, GObject.TYPE_INT]
-        names = ["Project", "Status", "Priority"]
-        self.CurrentRecordsStore = Gtk.ListStore(types[0], types[1], types[2])
+        types = [GObject.TYPE_STRING, GObject.TYPE_STRING, GObject.TYPE_INT, GObject.TYPE_BOOLEAN]
+        names = ["Project", "Status", "Priority", "Completed?"]
+        self.CurrentRecordsStore = Gtk.ListStore(types[0], types[1], types[2], types[3])
         self.CurrentRecordsStore.names = names
         self.treeview.set_model(self.CurrentRecordsStore)
         self.box.pack_start(self.treeview, True, True, 0)
@@ -173,52 +174,79 @@ class MyData:
         '''
 
         for i in range(len(names)):          
-            '''
-            We want to use a SpinButton to edit the numeric data entered into the Priority
-            column, so we check for the data type of the column so we can assign the 
-            appropriate CellRenderer to it.
-            '''
-            if types[i] == GObject.TYPE_INT:
-                self.renderer.append(Gtk.CellRendererSpin())              
+            
+            if types[i] == GObject.TYPE_BOOLEAN:
                 '''
-                Attach the CellRendererSpin to the adjustment holding the data defining the
-                SpinButton's behavior.
-                '''               
-                self.renderer[i].set_property("adjustment", Gtk.Adjustment(
-                                        1.0, 1.0, 4.0, 1.0, 4.0, 0.0))              
-                '''The Priority column shouldn't expand, so we set that behavior here, too.'''
+                The "Completed?" column is the only boolean column, so we can put all
+                the column configuration unique to the "Completed?" column here: a
+                CellRendererToggle that can be activated in a column that will not expand.
+                '''
+                self.renderer.append(Gtk.CellRendererToggle())
                 expand = False
+                self.renderer[i].set_property("activatable", True)
+                self.renderer[i].connect("toggled", self.on_completed_toggled)
+                column = Gtk.TreeViewColumn(names[i], self.renderer[i], active = i)
                 
             else:
-                '''All the other columns receive text and need to expand.'''
-                self.renderer.append(Gtk.CellRendererText())
-                expand = True
-            column = Gtk.TreeViewColumn(names[i], self.renderer[i], text = i)
+                
+                if types[i] == GObject.TYPE_INT:
+                    '''
+                    We want to use a SpinButton to edit the numeric data entered into the Priority
+                    column, so we check for the data type of the column so we can assign the 
+                    appropriate CellRenderer to it and give the column any other configuration
+                    information unique to the Priority column.
+                    '''
+                    self.renderer.append(Gtk.CellRendererSpin())              
+                    '''
+                    Attach the CellRendererSpin to the adjustment holding the data defining the
+                    SpinButton's behavior.
+                    '''               
+                    self.renderer[i].set_property("adjustment", Gtk.Adjustment(
+                                        1.0, 1.0, 4.0, 1.0, 4.0, 0.0))              
+                    '''The Priority column shouldn't expand, so we set that behavior here, too.'''
+                    expand = False
+                
+                
+                else:
+                    '''The other two columns receive text and need to expand.'''
+                    self.renderer.append(Gtk.CellRendererText())
+                    expand = True
+                '''
+                Now comes the column and renderer configuration common to all columns
+                except the "Completed?" column.
+                '''
+                column = Gtk.TreeViewColumn(names[i], self.renderer[i], text = i)
+                '''
+                Permanently associate this CellRenderer with the column it's assigned to, 
+                which matches the column number in the ListStore. This makes retrieving the 
+                CellRenderer from signal and event messages much easier and ensures that any
+                reordering of columns in the TreeView will not interfere. 
+                '''
+                self.renderer[i].set_property("editable", True)
+                '''
+                The data in each column needs to be editable, so all the renderers need
+                to have the "editable" property set as "True" and all the renderers need
+                to be connected to all the editing related signals we use.
+                '''
+                self.renderer[i].connect("editing-started", self.validation_on_editing_started)
+                self.renderer[i].connect("editing-canceled", self.validation_on_editing_cancelled)
+                self.renderer[i].connect("edited", self.validation_on_edited)
+                column.set_cell_data_func(self.renderer[i], format_func, func_data = None)
+           
             '''
-            Permanently associate this CellRenderer with the column it's assigned to, 
-            which matches the column number in the ListStore. This makes retrieving the 
-            CellRenderer from signal and event messages much easier and ensures that any
-            reordering of columns in the TreeView will not interfere. the GObject.set_data
-            and .get_data methods may be dropped from the next version of PyGtk/PyGObject,
-            though, so watch for whatever facility is offered to replace that part of the
-            API.
+            Finally address configuration info needed for all columns, including "Completed?"
             '''
             self.renderer[i].column_obj = column
             self.renderer[i].column_number = i
+            '''
+            Provide an easy reference to the column in which the renderer appears as well as
+            that column's number - these items are required to locate cell data for deletion 
+            or editing.
+            '''
             
- #           column.set_cell_data_func(self.renderer[i], self.validation_on_cell_data)
- # Line commented out above sets a custom function to determine what and how to display as data
- # in the treeview. Not needed here because we need only display the bare data in the model.
- 
-            self.renderer[i].set_property("editable", True)
-            '''
-            The data in each column needs to be editable, so all the renderers need
-            to have the "editable" property set as "True" and all the renderers need
-            to be connected to all the editing related signals we use.
-            '''
-            self.renderer[i].connect("editing-started", self.validation_on_editing_started)
-            self.renderer[i].connect("editing-canceled", self.validation_on_editing_cancelled)
-            self.renderer[i].connect("edited", self.validation_on_edited)
+#           column.set_cell_data_func(self.renderer[i], self.validation_on_cell_data)
+# Line commented out above sets a custom function to determine what and how to display as data
+# in the treeview. Not needed here because we need only display the bare data in the model.
 
             column.set_sizing(Gtk.TreeViewColumnSizing.AUTOSIZE)
             column.set_clickable(True)
@@ -233,12 +261,16 @@ class MyData:
             '''       
             column.set_sort_column_id(i)
             column.set_sort_indicator(True)
-            column.set_expand(expand)       
+            column.set_expand(expand)
+                 
             '''Append the column to the TreeView.'''
             self.treeview.append_column(column)
+            
         self.CurrentRecordsStore.connect("sort-column-changed", self.on_sort_column_changed)
         '''
-        Sort changes need to be propagated to the disk file, if any.
+        Sort changes need to be propagated to the disk file, if any, to keep the ListStore and
+        disk file in the same order which, in turn, is required for the deletion of records to
+        work correctly.
         '''
         self.disk_file = None
         '''
@@ -327,7 +359,8 @@ class MyData:
             fields = {'project':'',
                       'status': '',
                       'priority': 1.0,
-                      'focus': None }
+                      'focus': None,
+                      'completed': False }
         
         record = AddRecordDialog(self.CurrentRecordsStore, fields)
         '''
@@ -367,7 +400,7 @@ class MyData:
             We're not concerned with sorting and order in these data stores
             here - just add the new record to the end.
             '''
-            row = [record['project'], record['status'], record['priority']]
+            row = [record['project'], record['status'], record['priority'], record['completed']]
             self.CurrentRecordsStore.append(row) # pylint: disable-msg = E1103
             if self.disk_file:
 #                self.disk_file["store"].append(row)
@@ -387,7 +420,7 @@ class MyData:
 # to display the bare data in the ListStore/model.
 
 #    def validation_on_cell_data(self, column, cell_renderer, tree_model, my_iter, user_data = None):
-#        value = tree_model.get_value(my_iter, cell_renderer.get_data("column_number"))
+#        value = tree_model.get_value(my_iter, cell_renderer.column_number)
 #        cell_renderer.set_property("text", value)
         
     def validation_on_editing_started(self, cell, cell_editable, row):
@@ -490,9 +523,12 @@ class MyData:
         new data is written safely to disk.
             '''
             self.CurrentRecordsStore[path][cell.column_number] = text
+            self.window.reshow_with_initial_size()
             if self.disk_file:
-                self.disk_file["store"][int(path)][cell.column_number] = text
-                self.disk_file.sync()
+                self.rewrite_disk_file()
+#                self.disk_file["store"][int(path)][cell.column_number] = text
+#                self.disk_file.sync()
+
             
     def restart_edit(self, path, col):
         '''
@@ -505,7 +541,37 @@ class MyData:
         return False
         '''
         Return False so that this method won't go on running forever.
-        '''    
+        '''
+    
+    def on_completed_toggled(self, cell, path):
+        '''
+        What to do if the user clicks a box in the "Completed?" column. Params are a
+        reference to the CellRendererToggle and a str representation of the path to
+        the relevant entry in the ListStore.
+        '''
+        my_iter = self.CurrentRecordsStore.get_iter(Gtk.TreePath.new_from_string(path))
+        '''
+        First, get an iter pointing to the record the user clicked on so we can retrieve
+        the current value in the cell the user clicked. Reverse the "active" state of the 
+        CellRendererToggle and then reverse the value in the ListStore and rewrite the 
+        disk file if it's open.
+        '''
+        if self.CurrentRecordsStore.get_value(my_iter, cell.column_number) == False:
+            cell.set_property("active", True)
+            self.CurrentRecordsStore[path][cell.column_number] = True
+            if self.disk_file:
+                self.rewrite_disk_file()
+#                self.disk_file["store"][int(path)][cell.column_number] = True
+#                self.disk_file.sync()
+        else:
+            cell.set_property("active", False)
+            self.CurrentRecordsStore[path][cell.column_number] = False
+            if self.disk_file:
+                self.rewrite_disk_file()
+#                self.disk_file["store"][int(path)][cell.column_number] = False
+#                self.disk_file.sync()
+            
+        
     def on_delete_button_clicked(self, widget): # pylint: disable-msg = W0613
         
         '''
@@ -622,7 +688,7 @@ class MyData:
             self.disk_file.sync()
         return False
         '''
-        This function called from GObject.idle_add, returns False so that
+        This function called from GObject.idle_add returns False so that
         it doesn't run forever.
         '''           
     def on_selection_changed(self, selection):        
@@ -875,7 +941,7 @@ class MyData:
         "to cancel edits and retrieve the old data. Use the 'Save'or 'Save As'\n" + \
         "menuitems to save your entries to a file."
         
-        msg = Gtk.MessageDialog(self.window, Gtk.DialogFlags.MODAL, 
+        msg = Gtk.MessageDialog(None, Gtk.DialogFlags.MODAL, 
                                 Gtk.MessageType.INFO, Gtk.ButtonsType.OK, 
                                 instructions)
         msg.set_title("Program Instructions")
@@ -961,6 +1027,19 @@ class MyData:
             '''
             msg.destroy()
         
+def format_func(column, cell, model, my_iter, data = None):
+    cell.set_property("font", "Sans 12")
+    if (model.get_value(my_iter, 2) == 1):
+        cell.set_property("weight", Pango.Weight.ULTRAHEAVY)
+    elif (model.get_value(my_iter, 2) == 4):
+        cell.set_property("weight", Pango.Weight.ULTRALIGHT)
+    else:
+        cell.set_property("weight", Pango.Weight.NORMAL)
+    if (model.get_value(my_iter, 3) == True):
+        cell.set_property("strikethrough", True)
+    else:
+        cell.set_property("strikethrough", False)
+
 if __name__ == "__main__":
     win = MyData()
     win.window.show_all()
