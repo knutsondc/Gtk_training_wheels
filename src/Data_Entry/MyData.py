@@ -10,6 +10,7 @@ import shelve
 from gi.repository import Gtk       #@UnresolvedImport pylint: disable-msg=E0611
 from gi.repository import GdkPixbuf #@UnresolvedImport pylint: disable-msg=E0611
 from gi.repository import GObject   #@UnresolvedImport pylint: disable-msg=E0611
+from gi.repository import Pango   #@UnresolvedImport pylint: disable-msg=E0611
 
 class MyData:
     """ 
@@ -32,14 +33,21 @@ class MyData:
         project_renderer = builder.get_object("ProjectCellRendererText")
         project_renderer.column_obj = project_column
         project_renderer.column_number = 0
+        project_column.set_cell_data_func(project_renderer, format_func, func_data = None)
         status_column = builder.get_object("StatusColumn")
         status_renderer = builder.get_object("StatusCellRendererText")
         status_renderer.column_obj = status_column
         status_renderer.column_number = 1
+        status_column.set_cell_data_func(status_renderer, format_func, func_data = None)
         priority_column = builder.get_object("PriorityColumn")
         priority_renderer = builder.get_object("PriorityCellRendererSpin")
         priority_renderer.column_obj = priority_column
         priority_renderer.column_number = 2
+        priority_column.set_cell_data_func(priority_renderer, format_func, func_data = None)
+        completed_column = builder.get_object("CompletedColumn")
+        completed_renderer = builder.get_object("CompletedCellRendererToggle")
+        completed_renderer.column_obj = completed_column
+        completed_renderer.column_number = 3
         '''
         The following item later holds references to the data records the user has 
         selected in the treeview and, by extension, the Gtk.ListStore from which
@@ -47,7 +55,7 @@ class MyData:
         '''
         self.selection = builder.get_object("treeview-selection")
         self.CurrentRecordsStore = builder.get_object("CurrentRecordsStore")
-        self.CurrentRecordsStore.names = ["Project", "Status", "Priority"]     
+        self.CurrentRecordsStore.names = ["Project", "Status", "Priority", "Completed?"]     
         self.paths_selected = None
         '''
         Make sure that the reference to selected records is empty at program start
@@ -119,7 +127,8 @@ class MyData:
             fields = {'project':'',
                       'status': '',
                       'priority': 1.0,
-                      'focus': None }
+                      'focus': None,
+                      'completed': False }
         
         record = AddRecordDialog(self.CurrentRecordsStore, fields)
         '''
@@ -159,7 +168,7 @@ class MyData:
             We're not concerned with sorting and order in these data stores
             here - just add the new record to the end.
             '''
-            row = [record['project'], record['status'], record['priority']]
+            row = [record['project'], record['status'], record['priority'], record['completed']]
             self.CurrentRecordsStore.append(row) # pylint: disable-msg = E1103
             if self.disk_file:
 #                self.disk_file["store"].append(row)
@@ -280,9 +289,11 @@ class MyData:
         new data is written safely to disk.
             '''
             self.CurrentRecordsStore[path][cell.column_number] = text
+            self.window.reshow_with_initial_size()
             if self.disk_file:
-                self.disk_file["store"][int(path)][cell.column_number] = text
-                self.disk_file.sync()
+                self.rewrite_disk_file()
+#                self.disk_file["store"][int(path)][cell.column_number] = text
+#                self.disk_file.sync()
             
     def restart_edit(self, path, col):
         '''
@@ -295,7 +306,34 @@ class MyData:
         return False
         '''
         Return False so that this method won't go on running forever.
-        '''    
+        '''
+    def on_completed_toggled(self, cell, path):
+        '''
+        What to do if the user clicks a box in the "Completed?" column. Params are a
+        reference to the CellRendererToggle and a str representation of the path to
+        the relevant entry in the ListStore.
+        '''
+        my_iter = self.CurrentRecordsStore.get_iter(Gtk.TreePath.new_from_string(path))
+        '''
+        First, get an iter pointing to the record the user clicked on so we can retrieve
+        the current value in the cell the user clicked. Reverse the "active" state of the 
+        CellRendererToggle and then reverse the value in the ListStore and rewrite the 
+        disk file if it's open.
+        '''
+        if self.CurrentRecordsStore.get_value(my_iter, cell.column_number) == False:
+            cell.set_property("active", True)
+            self.CurrentRecordsStore[path][cell.column_number] = True
+            if self.disk_file:
+                self.rewrite_disk_file()
+#                self.disk_file["store"][int(path)][cell.column_number] = True
+#                self.disk_file.sync()
+        else:
+            cell.set_property("active", False)
+            self.CurrentRecordsStore[path][cell.column_number] = False
+            if self.disk_file:
+                self.rewrite_disk_file()
+#                self.disk_file["store"][int(path)][cell.column_number] = False
+#                self.disk_file.sync()
     def on_delete_button_clicked(self, widget): # pylint: disable-msg = W0613
         
         '''
@@ -750,6 +788,20 @@ class MyData:
             and proceed with the task the user originally asked for.
             '''
             msg.destroy()
+            
+def format_func(column, cell, model, my_iter, data = None):
+    cell.set_property("font", "Sans 12")
+    if (model.get_value(my_iter, 2) == 1):
+        cell.set_property("weight", Pango.Weight.ULTRAHEAVY)
+    elif (model.get_value(my_iter, 2) == 4):
+        cell.set_property("weight", Pango.Weight.ULTRALIGHT)
+    else:
+        cell.set_property("weight", Pango.Weight.NORMAL)
+    if (model.get_value(my_iter, 3) == True):
+        cell.set_property("strikethrough", True)
+    else:
+        cell.set_property("strikethrough", False)
+
 if __name__ == "__main__":
     win = MyData()
     win.window.show_all()

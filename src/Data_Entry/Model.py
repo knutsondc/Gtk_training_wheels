@@ -27,6 +27,7 @@ def AddRecordDialog(recordsstore, fields = None):
     record_dialog.priority_spinbutton = record_dialog.get_object("priority_spinbutton")
     record_dialog.priority_adjustment = record_dialog.get_object("priority_adjustment")
     record_dialog.priority_adjustment.set_value(fields['priority'])
+    record_dialog.completed_toggle = record_dialog.get_object("toggle")
     record_dialog.ok_button = record_dialog.get_object("ok_button")
     record_dialog.cancel_button = record_dialog.get_object("cancel_button")
     record_dialog.connect_signals(record_dialog)
@@ -55,6 +56,7 @@ def AddRecordDialog(recordsstore, fields = None):
         The priority_adjustment gives a float value, but we need an int.
         '''
         fields['priority'] = int(record_dialog.priority_adjustment.get_value())
+        fields['completed'] = record_dialog.completed_toggle.get_active()
         '''
         After submitting data to the caller, this dialog's work is done.
         '''
