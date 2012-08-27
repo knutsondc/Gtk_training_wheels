@@ -790,7 +790,17 @@ class MyData:
             msg.destroy()
             
 def format_func(column, cell, model, my_iter, data = None):
+    '''
+    Function to format cell contents depending upon Priority
+    and Completed values.
+    '''
     cell.set_property("font", "Sans 12")
+    '''
+    This font displays clear differences between UltraHeavy,
+    Normal, and UltraLight font weights. Check the Priority
+    value for each record; 1s get rendered in UltraHeavy, 2s
+    and 3s in Normal and 4s in UltraLight weight script.
+    '''
     if (model.get_value(my_iter, 2) == 1):
         cell.set_property("weight", Pango.Weight.ULTRAHEAVY)
     elif (model.get_value(my_iter, 2) == 4):
@@ -798,6 +808,9 @@ def format_func(column, cell, model, my_iter, data = None):
     else:
         cell.set_property("weight", Pango.Weight.NORMAL)
     if (model.get_value(my_iter, 3) == True):
+        '''
+        Records marked Completed (column 3 == True) get strikethrough rendered.
+        '''
         cell.set_property("strikethrough", True)
     else:
         cell.set_property("strikethrough", False)
