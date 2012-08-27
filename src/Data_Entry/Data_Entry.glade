@@ -291,7 +291,6 @@
             </child>
             <child>
               <object class="GtkTreeViewColumn" id="PriorityColumn">
-                <property name="sizing">autosize</property>
                 <property name="title" translatable="yes">Priority</property>
                 <property name="clickable">True</property>
                 <property name="reorderable">True</property>
@@ -299,6 +298,7 @@
                 <property name="sort_column_id">2</property>
                 <child>
                   <object class="GtkCellRendererSpin" id="PriorityCellRendererSpin">
+                    <property name="xalign">0.37000000476837158</property>
                     <property name="alignment">right</property>
                     <property name="background_gdk">#ffffffffffff</property>
                     <property name="editable">True</property>
@@ -321,7 +321,6 @@
             </child>
             <child>
               <object class="GtkTreeViewColumn" id="CompletedColumn">
-                <property name="sizing">autosize</property>
                 <property name="title" translatable="yes">Completed?</property>
                 <property name="clickable">True</property>
                 <property name="reorderable">True</property>
