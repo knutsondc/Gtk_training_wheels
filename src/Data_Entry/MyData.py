@@ -414,29 +414,20 @@ class MyData:
         
         self.window.reshow_with_initial_size()
         
-    def on_sort_column_changed(self, widget):
+    def on_rows_reordered(self, path, iter, new_order, data = None):
         '''
         This function coded separately just in case there's something
         else we might in the future want to do on a sort.
-        For some unknown reason, in this glade version of the program,
-        the sort-column-changed signal gets fired three times every time
-        the sort order gets changed. As now written, this function still
-        produces the right result, but there's a lot of unnecessary work
-        being done.
         '''
         if self.disk_file:
-            GObject.idle_add(self.rewrite_disk_file)
+#            GObject.idle_add(self.rewrite_disk_file())
+            self.rewrite_disk_file()
             '''
-            Wrapping call to rewrite_disk_file in GObject.idle_add needed to avoid
-            inconsistency between disk_file and data store. Without this, clicking
-            on a column heading always generates a sort-column-change signal but
-            often the first such click doesn't actually change the sort order in the
-            treeview, but it DOES cause the order in the disk file to change, hence
-            the inconsistency. For the Delete Records button to work correctly, the
-            ListStore and disk file records must always be in the same order. Calling
-            rewrite_disk_file inside a call to idle_add() seems to insure that the
-            disk_file will not be reordered unless the ListStore has actually been
-            reordered.
+            Switching the trigger for rewriting the disk file from the
+            sort-column-changed signal to the rows-reordered signal seems
+            to have eliminated the need to wrap the call to rewrite_disk_file()
+            inside GObject.idle_add() in order to keep the disk file and
+            the ListStore in the same order at all times.
             '''
     def rewrite_disk_file(self):
         '''
