@@ -170,9 +170,9 @@ class MyData:
             '''
             row = [record['project'], record['status'], record['priority'], record['completed']]
             self.CurrentRecordsStore.append(row) # pylint: disable-msg = E1103
-            if self.disk_file:
-#                self.disk_file["store"].append(row)
-                self.rewrite_disk_file()
+#            if self.disk_file:
+##                self.disk_file["store"].append(row)
+#                self.rewrite_disk_file()
                 
 # The commented out method below caught Tab key presses and made sure they got
 # handled the same as Enter key strokes. Now not necessary as the restart_editing()
@@ -290,8 +290,8 @@ class MyData:
             '''
             self.CurrentRecordsStore[path][cell.column_number] = text
             self.window.reshow_with_initial_size()
-            if self.disk_file:
-                self.rewrite_disk_file()
+#            if self.disk_file:
+#                self.rewrite_disk_file()
 #                self.disk_file["store"][int(path)][cell.column_number] = text
 #                self.disk_file.sync()
             
@@ -321,15 +321,15 @@ class MyData:
         if cell.get_active() == False:
             cell.set_active(True)
             self.CurrentRecordsStore[path][cell.column_number] = True
-            if self.disk_file:
-                self.rewrite_disk_file()
+#            if self.disk_file:
+#                self.rewrite_disk_file()
 #                self.disk_file["store"][int(path)][cell.column_number] = True
 #                self.disk_file.sync()
         else:
             cell.set_active(False)
             self.CurrentRecordsStore[path][cell.column_number] = False
-            if self.disk_file:
-                self.rewrite_disk_file()
+#            if self.disk_file:
+#                self.rewrite_disk_file()
 #                self.disk_file["store"][int(path)][cell.column_number] = False
 #                self.disk_file.sync()
 
@@ -361,9 +361,9 @@ class MyData:
                     for path in self.paths_selected]:
             if row.get_path():
                 '''check if the RowReference still points to a valid Path '''
-                if self.disk_file:
-                    del self.disk_file['store'][row.get_path().get_indices()[0]]
-                    '''
+#                if self.disk_file:
+#                    del self.disk_file['store'][row.get_path().get_indices()[0]]
+                '''
                     The one-to-one relationship between the disk file version
                     of the ListStore and the ListStore itself and their simple
                     two-dimensional layout means we can use the TreePaths we
@@ -384,14 +384,14 @@ class MyData:
                     element list, but we need a simple integer as an index, so
                     we take the single ELEMENT of the list as our index, not 
                     the list itself.
-                    '''
-                    self.disk_file.sync()
-                    '''
+                '''
+#                    self.disk_file.sync()
+                '''
                     Now that the record has been deleted from the disk_file,
                     we can delete the record from the disk_store and restore
                     the one-to-one relationship between the ListStore and the
                     disk_file representation of it in disk_file['store'].
-                    '''
+                '''
                 del self.CurrentRecordsStore[row.get_path().get_indices()[0]]
                 
        
@@ -414,14 +414,14 @@ class MyData:
         
         self.window.reshow_with_initial_size()
         
-    def on_rows_reordered(self, path, iter, new_order, data = None):
+    def on_row_inserted(self, model, path, my_iter):
         '''
-        This function coded separately just in case there's something
-        else we might in the future want to do on a sort.
+        This and the following three methods implement the scheme of keeping the disk
+        file and ListStore synchronized by simply rewriting the whole disk file every
+        time the ListStore changes.
         '''
         if self.disk_file:
-#            GObject.idle_add(self.rewrite_disk_file())
-            self.rewrite_disk_file()
+            GObject.idle_add(self.rewrite_disk_file)
             '''
             Switching the trigger for rewriting the disk file from the
             sort-column-changed signal to the rows-reordered signal seems
@@ -429,6 +429,20 @@ class MyData:
             inside GObject.idle_add() in order to keep the disk file and
             the ListStore in the same order at all times.
             '''
+            
+    def on_row_deleted(self, model, path):
+        if self.disk_file:
+            GObject.idle_add(self.rewrite_disk_file)
+            
+    def on_row_changed(self, model, path, my_iter, data = None):
+        if self.disk_file:
+            GObject.idle_add(self.rewrite_disk_file)
+
+    def on_rows_reordered(self, path, my_iter, new_order, data = None):
+ 
+        if self.disk_file:
+            GObject.idle_add(self.rewrite_disk_file)
+
     def rewrite_disk_file(self):
         '''
         Function to rewrite the disk file to keep it in the same order
@@ -512,10 +526,10 @@ class MyData:
             if self.disk_file:
                 shelve.Shelf.close(self.disk_file)
                 self.disk_file = None
-                self.CurrentRecordsStore.clear()    #pylint: disable-msg = E1103
             try:
                 self.disk_file = shelve.open(dialog.get_filename(),
                                           writeback = True)
+                self.CurrentRecordsStore.clear()
                 '''First, retrieve the 'names' element of the CurrentDataStore'''
                 self.CurrentRecordsStore.names = self.disk_file["names"]
                 '''
