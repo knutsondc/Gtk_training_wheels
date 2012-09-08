@@ -226,12 +226,11 @@ class MyData:
     def validation_on_edited(self, cell, path, text):       
         '''        
         The "path" parameter emitted with the signal contains a str reference to
-        the row number of the cell that produced the signal.The widget parameter
+        the row number of the cell that produced the signal.The cell parameter
         is the CellRenderer that produced the "edited" signal; its column number
-        is carried in the "column number" key we associated with it earlier with
-        the set_data() method. We could get the column number from the widget's
-        place in the list of renderers, but the approach taken here is more
-        generalized.
+        is carried in the "column number" key we associated with it earlier. We
+        could get the column number from the cell's place in the list of renderers,
+        but the approach taken here is more generalized.
         
         The "text" parameter emitted with the "edited" signal is a str representation
         of the new data the user entered into the edited cell. If the relevant column 
@@ -413,7 +412,7 @@ class MyData:
         '''
         
         self.window.reshow_with_initial_size()
-        
+                
     def on_row_inserted(self, model, path, my_iter):
         '''
         This and the following three methods implement the scheme of keeping the disk

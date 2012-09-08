@@ -26,6 +26,7 @@ class MyData:
         
         self.window = Gtk.Window()
         self.window.set_title("Unsaved Data")
+        self.window.set_default_size(620, 200)
         self.window.set_resizable(True)
         self.window.set_position(Gtk.WindowPosition.MOUSE)
         self.window.set_accept_focus(True)
@@ -144,6 +145,8 @@ class MyData:
         helpmenu.add(inst_menu_item)
         
     def make_treeview(self):
+        scroller = Gtk.ScrolledWindow(None, None)
+        scroller.add(self.treeview)
         '''
         Set up treeview and its connection to the data ListStore
         '''       
@@ -162,7 +165,8 @@ class MyData:
         self.CurrentRecordsStore = Gtk.ListStore(types[0], types[1], types[2], types[3])
         self.CurrentRecordsStore.names = names
         self.treeview.set_model(self.CurrentRecordsStore)
-        self.box.pack_start(self.treeview, True, True, 0)
+#        self.box.pack_start(self.treeview, True, True, 0)
+        self.box.pack_start(scroller, True, True, 0)
         self.renderer = list()
         '''
         Create a list of CellRenderers equal to the number of data columns in the
