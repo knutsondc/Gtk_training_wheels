@@ -1,0 +1,559 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<interface>
+  <!-- interface-requires gtk+ 3.0 -->
+  <object class="GtkListStore" id="CurrentRecordsStore">
+    <columns>
+      <!-- column-name Project -->
+      <column type="gchararray"/>
+      <!-- column-name Status -->
+      <column type="gchararray"/>
+      <!-- column-name Priority -->
+      <column type="gint"/>
+      <!-- column-name Completed? -->
+      <column type="gboolean"/>
+    </columns>
+    <signal name="row-deleted" handler="on_row_deleted" swapped="no"/>
+    <signal name="row-changed" handler="on_row_changed" swapped="no"/>
+    <signal name="rows-reordered" handler="on_rows_reordered" swapped="no"/>
+    <signal name="row-inserted" handler="on_row_inserted" swapped="no"/>
+  </object>
+  <object class="GtkTreeModelSort" id="CurrentRecordsStoreSorted">
+    <property name="model">CurrentRecordsStore</property>
+    <signal name="row-deleted" handler="on_row_deleted" swapped="no"/>
+    <signal name="row-changed" handler="on_row_changed" swapped="no"/>
+  </object>
+  <object class="GtkAdjustment" id="PriorityAdjustment">
+    <property name="lower">1</property>
+    <property name="upper">4</property>
+    <property name="value">1</property>
+    <property name="step_increment">1</property>
+    <property name="page_increment">4</property>
+  </object>
+  <object class="GtkAccelGroup" id="accel_group"/>
+  <object class="GtkImage" id="image1">
+    <property name="visible">True</property>
+    <property name="can_focus">False</property>
+    <property name="stock">gtk-info</property>
+  </object>
+  <object class="GtkImage" id="image7">
+    <property name="visible">True</property>
+    <property name="can_focus">False</property>
+    <property name="ypad">9</property>
+    <property name="stock">gtk-about</property>
+  </object>
+  <object class="GtkTreeView" id="treeview_sort">
+    <property name="visible">True</property>
+    <property name="can_focus">True</property>
+    <property name="model">CurrentRecordsStoreSorted</property>
+    <property name="enable_search">False</property>
+    <property name="enable_grid_lines">both</property>
+    <signal name="columns-changed" handler="on_columns_changed" swapped="no"/>
+    <child internal-child="selection">
+      <object class="GtkTreeSelection" id="treeview_sort_selection">
+        <property name="mode">multiple</property>
+        <signal name="changed" handler="on_selection_changed" swapped="no"/>
+      </object>
+    </child>
+    <child>
+      <object class="GtkTreeViewColumn" id="ProjectColumnSorted">
+        <property name="resizable">True</property>
+        <property name="title" translatable="yes">Project</property>
+        <property name="clickable">True</property>
+        <property name="reorderable">True</property>
+        <property name="sort_indicator">True</property>
+        <property name="sort_column_id">0</property>
+        <child>
+          <object class="GtkCellRendererText" id="ProjectSortedCellRendererText">
+            <property name="cell_background_gdk">#000000000000</property>
+            <property name="cell_background_rgba">rgba(0,0,0,0)</property>
+            <property name="xpad">2</property>
+            <property name="ypad">2</property>
+            <property name="xalign">0</property>
+            <property name="background_gdk">#000000000000</property>
+            <property name="editable">True</property>
+            <property name="family">Sans</property>
+            <property name="font">Normal</property>
+            <property name="foreground_gdk">#000000000000</property>
+            <property name="size">12</property>
+            <property name="background_rgba">rgba(0,0,0,0)</property>
+            <property name="foreground_rgba">rgba(0,0,0,0)</property>
+            <signal name="editing-canceled" handler="validation_on_editing_cancelled" swapped="no"/>
+            <signal name="editing-started" handler="validation_on_editing_started" swapped="no"/>
+            <signal name="edited" handler="validation_on_edited" swapped="no"/>
+          </object>
+          <attributes>
+            <attribute name="text">0</attribute>
+          </attributes>
+        </child>
+      </object>
+    </child>
+    <child>
+      <object class="GtkTreeViewColumn" id="ContextColumnSorted">
+        <property name="resizable">True</property>
+        <property name="title" translatable="yes">Context</property>
+        <property name="clickable">True</property>
+        <property name="reorderable">True</property>
+        <property name="sort_indicator">True</property>
+        <property name="sort_column_id">1</property>
+        <child>
+          <object class="GtkCellRendererText" id="ContextSortedCellRendererText">
+            <property name="cell_background_gdk">#000000000000</property>
+            <property name="cell_background_rgba">rgba(0,0,0,0)</property>
+            <property name="xpad">2</property>
+            <property name="ypad">2</property>
+            <property name="xalign">0</property>
+            <property name="background_gdk">#000000000000</property>
+            <property name="editable">True</property>
+            <property name="family">Sans</property>
+            <property name="font">Normal</property>
+            <property name="foreground_gdk">#000000000000</property>
+            <property name="size">12</property>
+            <property name="background_rgba">rgba(0,0,0,0)</property>
+            <property name="foreground_rgba">rgba(0,0,0,0)</property>
+            <signal name="editing-canceled" handler="validation_on_editing_cancelled" swapped="no"/>
+            <signal name="editing-started" handler="validation_on_editing_started" swapped="no"/>
+            <signal name="edited" handler="validation_on_edited" swapped="no"/>
+          </object>
+          <attributes>
+            <attribute name="text">1</attribute>
+          </attributes>
+        </child>
+      </object>
+    </child>
+    <child>
+      <object class="GtkTreeViewColumn" id="PriorityColumnSorted">
+        <property name="title" translatable="yes">Priority</property>
+        <property name="clickable">True</property>
+        <property name="reorderable">True</property>
+        <property name="sort_indicator">True</property>
+        <property name="sort_column_id">2</property>
+        <child>
+          <object class="GtkCellRendererSpin" id="PrioritySortedCellRendererSpin">
+            <property name="cell_background_gdk">#000000000000</property>
+            <property name="cell_background_rgba">rgba(0,0,0,0)</property>
+            <property name="xpad">2</property>
+            <property name="ypad">2</property>
+            <property name="xalign">0</property>
+            <property name="alignment">right</property>
+            <property name="background_gdk">#000000000000</property>
+            <property name="editable">True</property>
+            <property name="family">Sans</property>
+            <property name="font">Normal</property>
+            <property name="foreground_gdk">#000000000000</property>
+            <property name="size">12</property>
+            <property name="background_rgba">rgba(0,0,0,0)</property>
+            <property name="foreground_rgba">rgba(0,0,0,0)</property>
+            <property name="adjustment">PriorityAdjustment</property>
+            <signal name="editing-canceled" handler="validation_on_editing_cancelled" swapped="no"/>
+            <signal name="editing-started" handler="validation_on_editing_started" swapped="no"/>
+            <signal name="edited" handler="validation_on_edited" swapped="no"/>
+          </object>
+          <attributes>
+            <attribute name="text">2</attribute>
+          </attributes>
+        </child>
+      </object>
+    </child>
+    <child>
+      <object class="GtkTreeViewColumn" id="CompletedColumnSorted">
+        <property name="title" translatable="yes">Completed?</property>
+        <property name="clickable">True</property>
+        <property name="reorderable">True</property>
+        <property name="sort_indicator">True</property>
+        <property name="sort_column_id">3</property>
+        <child>
+          <object class="GtkCellRendererToggle" id="CompletedSortedCellRendererToggle">
+            <property name="cell_background_gdk">#000000000000</property>
+            <property name="cell_background_rgba">rgba(0,0,0,0)</property>
+            <property name="xpad">2</property>
+            <property name="ypad">2</property>
+            <signal name="toggled" handler="on_completed_toggled" swapped="no"/>
+          </object>
+          <attributes>
+            <attribute name="active">3</attribute>
+          </attributes>
+        </child>
+      </object>
+    </child>
+  </object>
+  <object class="GtkWindow" id="window">
+    <property name="can_focus">False</property>
+    <property name="title" translatable="yes">Unsaved Data File</property>
+    <property name="window_position">mouse</property>
+    <property name="default_width">620</property>
+    <property name="default_height">200</property>
+    <accel-groups>
+      <group name="accel_group"/>
+    </accel-groups>
+    <signal name="delete-event" handler="on_window_delete" swapped="no"/>
+    <child>
+      <object class="GtkBox" id="main_box">
+        <property name="visible">True</property>
+        <property name="can_focus">False</property>
+        <property name="orientation">vertical</property>
+        <child>
+          <object class="GtkLabel" id="label">
+            <property name="visible">True</property>
+            <property name="can_focus">False</property>
+            <property name="label" translatable="yes">GTK+ Glade Data Entry and Update Demo Program</property>
+          </object>
+          <packing>
+            <property name="expand">False</property>
+            <property name="fill">True</property>
+            <property name="position">0</property>
+          </packing>
+        </child>
+        <child>
+          <object class="GtkMenuBar" id="menubar">
+            <property name="visible">True</property>
+            <property name="can_focus">False</property>
+            <child>
+              <object class="GtkImageMenuItem" id="file_menu_item">
+                <property name="label">gtk-file</property>
+                <property name="use_action_appearance">False</property>
+                <property name="visible">True</property>
+                <property name="can_focus">False</property>
+                <property name="use_underline">True</property>
+                <property name="use_stock">True</property>
+                <property name="accel_group">accel_group</property>
+                <property name="always_show_image">True</property>
+                <accelerator key="f" signal="activate" modifiers="GDK_CONTROL_MASK"/>
+                <child type="submenu">
+                  <object class="GtkMenu" id="newfilemenu">
+                    <property name="visible">True</property>
+                    <property name="can_focus">False</property>
+                    <property name="accel_group">accel_group</property>
+                    <child>
+                      <object class="GtkImageMenuItem" id="new_menu_item">
+                        <property name="label">gtk-new</property>
+                        <property name="use_action_appearance">False</property>
+                        <property name="visible">True</property>
+                        <property name="can_focus">False</property>
+                        <property name="use_underline">True</property>
+                        <property name="use_stock">True</property>
+                        <property name="accel_group">accel_group</property>
+                        <property name="always_show_image">True</property>
+                        <accelerator key="n" signal="activate" modifiers="GDK_CONTROL_MASK"/>
+                        <signal name="activate" handler="on_new_menu_item_activate" swapped="no"/>
+                      </object>
+                    </child>
+                    <child>
+                      <object class="GtkImageMenuItem" id="open_menu_item">
+                        <property name="label">gtk-open</property>
+                        <property name="use_action_appearance">False</property>
+                        <property name="visible">True</property>
+                        <property name="can_focus">False</property>
+                        <property name="use_underline">True</property>
+                        <property name="use_stock">True</property>
+                        <property name="accel_group">accel_group</property>
+                        <property name="always_show_image">True</property>
+                        <accelerator key="o" signal="activate" modifiers="GDK_CONTROL_MASK"/>
+                        <signal name="activate" handler="on_open_menu_item_activate" swapped="no"/>
+                      </object>
+                    </child>
+                    <child>
+                      <object class="GtkImageMenuItem" id="save_menu_item">
+                        <property name="label">gtk-save</property>
+                        <property name="use_action_appearance">False</property>
+                        <property name="visible">True</property>
+                        <property name="can_focus">False</property>
+                        <property name="use_underline">True</property>
+                        <property name="use_stock">True</property>
+                        <property name="accel_group">accel_group</property>
+                        <property name="always_show_image">True</property>
+                        <accelerator key="s" signal="activate" modifiers="GDK_CONTROL_MASK"/>
+                        <signal name="activate" handler="on_save_menu_item_activate" swapped="no"/>
+                      </object>
+                    </child>
+                    <child>
+                      <object class="GtkImageMenuItem" id="save_as_menu_item">
+                        <property name="label">gtk-save-as</property>
+                        <property name="use_action_appearance">False</property>
+                        <property name="visible">True</property>
+                        <property name="can_focus">False</property>
+                        <property name="use_underline">True</property>
+                        <property name="use_stock">True</property>
+                        <property name="accel_group">accel_group</property>
+                        <property name="always_show_image">True</property>
+                        <accelerator key="s" signal="activate" modifiers="GDK_SHIFT_MASK | GDK_CONTROL_MASK"/>
+                        <signal name="activate" handler="on_save_as_menu_item_activate" swapped="no"/>
+                      </object>
+                    </child>
+                    <child>
+                      <object class="GtkSeparatorMenuItem" id="separatormenuitem1">
+                        <property name="visible">True</property>
+                        <property name="can_focus">False</property>
+                      </object>
+                    </child>
+                    <child>
+                      <object class="GtkImageMenuItem" id="quit_menu_item">
+                        <property name="label">gtk-quit</property>
+                        <property name="use_action_appearance">False</property>
+                        <property name="visible">True</property>
+                        <property name="can_focus">False</property>
+                        <property name="use_underline">True</property>
+                        <property name="use_stock">True</property>
+                        <property name="accel_group">accel_group</property>
+                        <property name="always_show_image">True</property>
+                        <accelerator key="q" signal="activate" modifiers="GDK_CONTROL_MASK"/>
+                        <signal name="activate" handler="on_quit_menu_item_activate" swapped="no"/>
+                      </object>
+                    </child>
+                  </object>
+                </child>
+              </object>
+            </child>
+            <child>
+              <object class="GtkImageMenuItem" id="help_menu_item">
+                <property name="label">gtk-help</property>
+                <property name="use_action_appearance">False</property>
+                <property name="visible">True</property>
+                <property name="can_focus">False</property>
+                <property name="use_underline">True</property>
+                <property name="use_stock">True</property>
+                <property name="accel_group">accel_group</property>
+                <property name="always_show_image">True</property>
+                <accelerator key="h" signal="activate" modifiers="GDK_CONTROL_MASK"/>
+                <child type="submenu">
+                  <object class="GtkMenu" id="helpmenu">
+                    <property name="visible">True</property>
+                    <property name="can_focus">False</property>
+                    <property name="accel_group">accel_group</property>
+                    <child>
+                      <object class="GtkImageMenuItem" id="about_menu_item">
+                        <property name="label">_About</property>
+                        <property name="use_action_appearance">False</property>
+                        <property name="visible">True</property>
+                        <property name="can_focus">False</property>
+                        <property name="use_underline">True</property>
+                        <property name="image">image7</property>
+                        <property name="use_stock">False</property>
+                        <property name="accel_group">accel_group</property>
+                        <property name="always_show_image">True</property>
+                        <accelerator key="a" signal="activate" modifiers="GDK_CONTROL_MASK"/>
+                        <signal name="activate" handler="on_about_menu_item_activate" swapped="no"/>
+                      </object>
+                    </child>
+                    <child>
+                      <object class="GtkImageMenuItem" id="instructions_menu_item">
+                        <property name="label">_Instructions</property>
+                        <property name="use_action_appearance">False</property>
+                        <property name="visible">True</property>
+                        <property name="can_focus">False</property>
+                        <property name="use_underline">True</property>
+                        <property name="image">image1</property>
+                        <property name="use_stock">False</property>
+                        <property name="accel_group">accel_group</property>
+                        <property name="always_show_image">True</property>
+                        <accelerator key="i" signal="activate" modifiers="GDK_CONTROL_MASK"/>
+                        <signal name="activate" handler="on_instructions_menu_item_activate" swapped="no"/>
+                      </object>
+                    </child>
+                  </object>
+                </child>
+              </object>
+            </child>
+          </object>
+          <packing>
+            <property name="expand">False</property>
+            <property name="fill">True</property>
+            <property name="position">1</property>
+          </packing>
+        </child>
+        <child>
+          <object class="GtkScrolledWindow" id="scroller">
+            <property name="visible">True</property>
+            <property name="can_focus">True</property>
+            <property name="shadow_type">in</property>
+            <child>
+              <object class="GtkTreeView" id="treeview_dnd">
+                <property name="visible">True</property>
+                <property name="can_focus">True</property>
+                <property name="model">CurrentRecordsStore</property>
+                <property name="headers_clickable">False</property>
+                <property name="reorderable">True</property>
+                <property name="enable_search">False</property>
+                <property name="search_column">0</property>
+                <property name="show_expanders">False</property>
+                <property name="enable_grid_lines">both</property>
+                <signal name="columns-changed" handler="on_columns_changed" swapped="no"/>
+                <child internal-child="selection">
+                  <object class="GtkTreeSelection" id="treeview-selection">
+                    <property name="mode">multiple</property>
+                    <signal name="changed" handler="on_selection_changed" swapped="no"/>
+                  </object>
+                </child>
+                <child>
+                  <object class="GtkTreeViewColumn" id="ProjectColumn">
+                    <property name="resizable">True</property>
+                    <property name="title" translatable="yes">Project</property>
+                    <property name="expand">True</property>
+                    <property name="reorderable">True</property>
+                    <child>
+                      <object class="GtkCellRendererText" id="ProjectCellRendererText">
+                        <property name="background">White</property>
+                        <property name="background_gdk">#ffffffffffff</property>
+                        <property name="editable">True</property>
+                        <property name="font">Normal</property>
+                        <property name="foreground">Black</property>
+                        <property name="foreground_gdk">#000000000000</property>
+                        <property name="single_paragraph_mode">True</property>
+                        <signal name="editing-canceled" handler="validation_on_editing_cancelled" swapped="no"/>
+                        <signal name="editing-started" handler="validation_on_editing_started" swapped="no"/>
+                        <signal name="edited" handler="validation_on_edited" swapped="no"/>
+                      </object>
+                      <attributes>
+                        <attribute name="text">0</attribute>
+                      </attributes>
+                    </child>
+                  </object>
+                </child>
+                <child>
+                  <object class="GtkTreeViewColumn" id="ContextColumn">
+                    <property name="resizable">True</property>
+                    <property name="title" translatable="yes">Context</property>
+                    <property name="expand">True</property>
+                    <property name="reorderable">True</property>
+                    <child>
+                      <object class="GtkCellRendererText" id="ContextCellRendererText">
+                        <property name="background">White</property>
+                        <property name="background_gdk">#ffffffffffff</property>
+                        <property name="editable">True</property>
+                        <property name="font">Normal</property>
+                        <property name="foreground">Black</property>
+                        <property name="foreground_gdk">#000000000000</property>
+                        <property name="single_paragraph_mode">True</property>
+                        <signal name="editing-canceled" handler="validation_on_editing_cancelled" swapped="no"/>
+                        <signal name="editing-started" handler="validation_on_editing_started" swapped="no"/>
+                        <signal name="edited" handler="validation_on_edited" swapped="no"/>
+                      </object>
+                      <attributes>
+                        <attribute name="text">1</attribute>
+                      </attributes>
+                    </child>
+                  </object>
+                </child>
+                <child>
+                  <object class="GtkTreeViewColumn" id="PriorityColumn">
+                    <property name="title" translatable="yes">Priority</property>
+                    <property name="reorderable">True</property>
+                    <child>
+                      <object class="GtkCellRendererSpin" id="PriorityCellRendererSpin">
+                        <property name="xalign">0.37000000476837158</property>
+                        <property name="alignment">right</property>
+                        <property name="background_gdk">#ffffffffffff</property>
+                        <property name="editable">True</property>
+                        <property name="font">Normal</property>
+                        <property name="foreground_gdk">#000000000000</property>
+                        <property name="single_paragraph_mode">True</property>
+                        <property name="width_chars">1</property>
+                        <property name="max_width_chars">1</property>
+                        <property name="adjustment">PriorityAdjustment</property>
+                        <property name="climb_rate">1</property>
+                        <signal name="editing-canceled" handler="validation_on_editing_cancelled" swapped="no"/>
+                        <signal name="editing-started" handler="validation_on_editing_started" swapped="no"/>
+                        <signal name="edited" handler="validation_on_edited" swapped="no"/>
+                      </object>
+                      <attributes>
+                        <attribute name="text">2</attribute>
+                      </attributes>
+                    </child>
+                  </object>
+                </child>
+                <child>
+                  <object class="GtkTreeViewColumn" id="CompletedColumn">
+                    <property name="title" translatable="yes">Completed?</property>
+                    <property name="alignment">0.0099999997764825821</property>
+                    <property name="reorderable">True</property>
+                    <property name="sort_order">descending</property>
+                    <child>
+                      <object class="GtkCellRendererToggle" id="CompletedCellRendererToggle">
+                        <signal name="toggled" handler="on_completed_toggled" swapped="no"/>
+                      </object>
+                      <attributes>
+                        <attribute name="active">3</attribute>
+                      </attributes>
+                    </child>
+                  </object>
+                </child>
+              </object>
+            </child>
+          </object>
+          <packing>
+            <property name="expand">True</property>
+            <property name="fill">True</property>
+            <property name="position">2</property>
+          </packing>
+        </child>
+        <child>
+          <object class="GtkBox" id="button_box">
+            <property name="visible">True</property>
+            <property name="can_focus">False</property>
+            <property name="homogeneous">True</property>
+            <child>
+              <object class="GtkButton" id="add_record_button">
+                <property name="label" translatable="yes">_Add Record</property>
+                <property name="use_action_appearance">False</property>
+                <property name="visible">True</property>
+                <property name="can_focus">True</property>
+                <property name="can_default">True</property>
+                <property name="has_default">True</property>
+                <property name="receives_default">True</property>
+                <property name="use_action_appearance">False</property>
+                <property name="use_underline">True</property>
+                <signal name="clicked" handler="on_add_button_clicked" swapped="no"/>
+              </object>
+              <packing>
+                <property name="expand">False</property>
+                <property name="fill">False</property>
+                <property name="position">0</property>
+              </packing>
+            </child>
+            <child>
+              <object class="GtkToggleButton" id="dnd_toggle_button">
+                <property name="label" translatable="yes">D_rag and Drop?</property>
+                <property name="use_action_appearance">False</property>
+                <property name="visible">True</property>
+                <property name="can_focus">True</property>
+                <property name="receives_default">True</property>
+                <property name="border_width">1</property>
+                <property name="use_action_appearance">False</property>
+                <property name="use_underline">True</property>
+                <property name="active">True</property>
+                <signal name="toggled" handler="on_dnd_toggle_button_toggled" swapped="no"/>
+              </object>
+              <packing>
+                <property name="expand">False</property>
+                <property name="fill">False</property>
+                <property name="pack_type">end</property>
+                <property name="position">1</property>
+              </packing>
+            </child>
+            <child>
+              <object class="GtkButton" id="delete_record_button">
+                <property name="label" translatable="yes">_Delete Record(s)</property>
+                <property name="use_action_appearance">False</property>
+                <property name="visible">True</property>
+                <property name="can_focus">True</property>
+                <property name="receives_default">True</property>
+                <property name="use_action_appearance">False</property>
+                <property name="use_underline">True</property>
+                <signal name="clicked" handler="on_delete_button_clicked" swapped="no"/>
+              </object>
+              <packing>
+                <property name="expand">False</property>
+                <property name="fill">False</property>
+                <property name="position">2</property>
+              </packing>
+            </child>
+          </object>
+          <packing>
+            <property name="expand">False</property>
+            <property name="fill">False</property>
+            <property name="position">3</property>
+          </packing>
+        </child>
+      </object>
+    </child>
+  </object>
+</interface>
