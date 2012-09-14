@@ -758,22 +758,34 @@ class MyData:
         Check proposed input for invalid data. Return True if there's an error,
         False if everything's good.
         '''
-        if self.CurrentRecordsStore.get_column_type( #pylint: disable-msg=E1103
-                col_num) == GObject.TYPE_STRING:
+        if col_num == 0:
             '''If column calls for a string, it cannot be empty '''
             if not text:
                 msg = Gtk.MessageDialog(None, Gtk.DialogFlags.MODAL,
                                 Gtk.MessageType.ERROR, Gtk.ButtonsType.OK,
-                                "Invalid or incomplete %s entry." % 
-                                self.CurrentRecordsStore.names[col_num])
-                msg.set_title("%s Entry Error!" % self.CurrentRecordsStore.names[col_num])
+                                "Invalid or incomplete Project entry.\n"  + \
+                                "Project Field cannot be blank.")
+                msg.set_title("Project Entry Error!")
                 msg.run()
                 msg.destroy()
                 return True
             else:
                 return False
-        elif self.CurrentRecordsStore.get_column_type(#pylint: disable-msg=E1103
-                col_num) == GObject.TYPE_INT:
+        elif col_num == 1:
+            if (len(text) < 2 or not text.startswith('@')):
+                msg = Gtk.MessageDialog(None, Gtk.DialogFlags.MODAL,
+                                Gtk.MessageType.ERROR, Gtk.ButtonsType.OK,
+                                "Invalid or incomplete Context entry.\n" + \
+                                 "Entry must be at least two characters starting with @")
+                msg.set_title("Context Entry Error!")
+                msg.run()
+                msg.destroy()
+                return True
+            else:
+                return False
+            
+        elif col_num == 2:
+            
             '''
             If column calls for a number, it must be between 1 and 4. The
             Spinbutton and its adjustment should guarantee compliance, but
@@ -792,8 +804,8 @@ class MyData:
         else:
             msg = Gtk.MessageDialog(None, Gtk.DialogFlags.MODAL,
                                 Gtk.MessageType.ERROR, Gtk.ButtonsType.OK,
-                                "Unknown Data Type Entered.")
-            msg.set_title("Unknown Data Type Error!")
+                                "Unknown Data Entry Error.")
+            msg.set_title("Unknown Data Entry Error!")
             msg.run()
             msg.destroy()
             return True
