@@ -14,7 +14,6 @@
     </columns>
     <signal name="row-deleted" handler="on_row_deleted" swapped="no"/>
     <signal name="row-changed" handler="on_row_changed" swapped="no"/>
-    <signal name="rows-reordered" handler="on_rows_reordered" swapped="no"/>
     <signal name="row-inserted" handler="on_row_inserted" swapped="no"/>
   </object>
   <object class="GtkTreeModelSort" id="CurrentRecordsStoreSorted">

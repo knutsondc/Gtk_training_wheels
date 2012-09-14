@@ -35,28 +35,24 @@ class MyData:
         '''
         self.treeview_dnd = builder.get_object("treeview_dnd")
         project_column = builder.get_object("ProjectColumn")
-        project_column.column_number = 0
         project_renderer = builder.get_object("ProjectCellRendererText")
         project_renderer.column_obj = project_column
         project_renderer.column_number = 0
         project_renderer.tv = self.treeview_dnd
         project_column.set_cell_data_func(project_renderer, format_func, func_data = None)
         context_column = builder.get_object("ContextColumn")
-        context_column.column_number = 1
         context_renderer = builder.get_object("ContextCellRendererText")
         context_renderer.column_obj = context_column
         context_renderer.column_number = 1
         context_renderer.tv = self.treeview_dnd
         context_column.set_cell_data_func(context_renderer, format_func, func_data = None)
         priority_column = builder.get_object("PriorityColumn")
-        priority_column.column_number = 2
         priority_renderer = builder.get_object("PriorityCellRendererSpin")
         priority_renderer.column_obj = priority_column
         priority_renderer.column_number = 2
         priority_renderer.tv = self.treeview_dnd
         priority_column.set_cell_data_func(priority_renderer, format_func, func_data = None)
         completed_column = builder.get_object("CompletedColumn")
-        completed_column.column_number = 3
         completed_renderer = builder.get_object("CompletedCellRendererToggle")
         completed_renderer.column_obj = completed_column
         completed_renderer.column_number = 3
@@ -353,15 +349,16 @@ class MyData:
         "active" state of the CellRendererToggle and then reverse the value in the ListStore
         and rewrite the disk file if it's open.
         '''
+        if cell.tv == self.treeview_sort:
+            '''
+            Cells in the sorted view need to have path variables converted to paths
+            pointing to the same cell in the underlying, unsorted model.
+            '''
+            path = self.CurrentRecordsStoreSorted.convert_path_to_child_path(Gtk.TreePath.new_from_string(path))
+            path = path.to_string()
+            
         if cell.get_active() == False:
-            cell.set_active(True)
-            if cell.tv == self.treeview_sort:
-                '''
-                Cells in the sorted view need to have path variables converted to paths
-                pointing to the same cell in the underlying, unsorted model.
-                '''
-                path = self.CurrentRecordsStoreSorted.convert_path_to_child_path(Gtk.TreePath.new_from_string(path))
-                path = path.to_string()
+            cell.set_active(True)            
             self.CurrentRecordsStore[path][cell.column_number] = True
 #            if self.disk_file:
 #                self.rewrite_disk_file()
@@ -369,9 +366,6 @@ class MyData:
 #                self.disk_file.sync()
         else:
             cell.set_active(False)
-            if cell.tv == self.treeview_sort:
-                path = self.CurrentRecordsStoreSorted.convert_path_to_child_path(Gtk.TreePath.new_from_string(path))
-                path = path.to_string()
             self.CurrentRecordsStore[path][cell.column_number] = False
 
     def on_delete_button_clicked(self, widget): # pylint: disable-msg = W0613
@@ -406,20 +400,26 @@ class MyData:
 #                if self.disk_file:
 #                    del self.disk_file['store'][row.get_path().get_indices()[0]]
                     '''
-                    The one-to-one relationship between the disk file version
-                    of the ListStore and the ListStore itself and their simple
-                    two-dimensional layout means we can use the TreePaths we
-                    derive from the RowReferences, after converting them to
-                    simple integers, as indices to the disk_file['store'] data
-                    structure. The TreePaths contain a str representation of the
-                    row number in the ListStore of the records they point to.
-                    We have to modify the disk file first because otherwise the
-                    RowReferences would get out of sync with the disk file
-                    representation of the ListStore - the one-to-one
-                    relationship gets broken -- and the program either would 
-                    delete the wrong record or (more likely) crash trying to
-                    delete a non-existent row of the disk_File['store'] pointed
-                    to by an outdated TreePath..
+                    Rather than delete individual records from the disk file, 
+                    we simply write the entire ListStore to disk every time
+                    there's a change to it - much simpler and not very burdensome
+                    give the small data sets used in this program. The callbacks
+                    for the signals generated by row insertion and deletion will
+                    cause the ListStore to be rewritten to disk and keep the disk
+                    file and ListStore consistent. Note, though, that the one-to-one
+                    relationship between the disk file version of the ListStore and
+                    the ListStore itself and their simple two-dimensional layout means
+                    we could use the TreePaths we derive from the RowReferences, after
+                    converting them to simple integers, as indices to the disk_file['store']
+                    data structure that could be used to delete individual records 
+                    from the disk file. The TreePaths contain a str representation
+                    of the row number in the ListStore of the records they point to.
+                    We would have to modify the disk file before the ListStore because
+                    otherwise the RowReferences would get out of sync with the disk file
+                    representation of the ListStore - the one-to-one relationship would be
+                    broken -- and the program either would delete the wrong record or (more
+                    likely) crash trying to delete a non-existent row of the disk_file['store']
+                    pointed to by an outdated TreePath.
                     
                     Note that Gtk.TreePath.get_indices() returns a LIST of
                     numbers describing the path. Here this should be a single 
@@ -428,12 +428,7 @@ class MyData:
                     the list itself.
                     '''
 #                    self.disk_file.sync()
-                    '''
-                    Now that the record has been deleted from the disk_file,
-                    we can delete the record from the disk_store and restore
-                    the one-to-one relationship between the ListStore and the
-                    disk_file representation of it in disk_file['store'].
-                    '''
+                    
                     del self.CurrentRecordsStore[row.get_path().get_indices()[0]]
                 
 # Delete method using iters on the ListStore:
@@ -464,18 +459,12 @@ class MyData:
         '''
         if self.disk_file:
             GObject.idle_add(self.rewrite_disk_file)
-
             
     def on_row_deleted(self, model, path):
         if self.disk_file:
             GObject.idle_add(self.rewrite_disk_file)
             
     def on_row_changed(self, model, path, my_iter, data = None):
-        if self.disk_file:
-            GObject.idle_add(self.rewrite_disk_file)
-
-    def on_rows_reordered(self, path, my_iter, new_order, data = None):
- 
         if self.disk_file:
             GObject.idle_add(self.rewrite_disk_file)
 
@@ -504,8 +493,9 @@ class MyData:
         The TreeViewSelection contains references to the rows in the TreeView the
         user has selected and the ListStore from which the data contained in those
         rows was taken. Note that this code is for multiple selection. Records 
-        selected from either tv are stored in an instance variable available to all
-        this class' methods.
+        selected from either tv are stored in a single instance variable available
+        to all this class' methods; only one tv is active at any time, so only one
+        instance variable is required.
         '''
         model, paths_selected = selection.get_selected_rows()
         if model == self.CurrentRecordsStoreSorted:
@@ -516,15 +506,6 @@ class MyData:
             self.paths_selected = [self.CurrentRecordsStoreSorted.convert_path_to_child_path(path) for path in paths_selected]
         else:
             self.paths_selected = paths_selected
-
-#    def on_sort_selection_changed(self, selection):        
-#        '''
-#        The TreeViewSelection contains references to the rows in the TreeView the
-#        user has selected and the ListStore from which the data contained in those
-#        rows was taken. Note that this code is for multiple selection.
-#        '''
-#        self.CurrentRecordsStoreSort, self.sorted_paths_selected = \
-#         self.selection.get_selected_rows()
 
     def on_new_menu_item_activate(self, widget):
         
