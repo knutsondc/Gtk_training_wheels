@@ -32,6 +32,8 @@ class MyData:
         self.scroller = builder.get_object("scroller")
         '''
         Present the data inside a window with scroll bars.
+        Program starts with the unsorted view active - the 
+        Glade file makes treeview_dnd scroller's child widget.
         '''
         self.treeview_dnd = builder.get_object("treeview_dnd")
         project_column = builder.get_object("ProjectColumn")
@@ -39,19 +41,19 @@ class MyData:
         project_renderer.column_obj = project_column
         project_renderer.column_number = 0
         project_renderer.tv = self.treeview_dnd
-        project_column.set_cell_data_func(project_renderer, format_func, func_data = None)
+        project_column.set_cell_data_func(project_renderer, _format_func, func_data = None)
         context_column = builder.get_object("ContextColumn")
         context_renderer = builder.get_object("ContextCellRendererText")
         context_renderer.column_obj = context_column
         context_renderer.column_number = 1
         context_renderer.tv = self.treeview_dnd
-        context_column.set_cell_data_func(context_renderer, format_func, func_data = None)
+        context_column.set_cell_data_func(context_renderer, _format_func, func_data = None)
         priority_column = builder.get_object("PriorityColumn")
         priority_renderer = builder.get_object("PriorityCellRendererSpin")
         priority_renderer.column_obj = priority_column
         priority_renderer.column_number = 2
         priority_renderer.tv = self.treeview_dnd
-        priority_column.set_cell_data_func(priority_renderer, format_func, func_data = None)
+        priority_column.set_cell_data_func(priority_renderer, _format_func, func_data = None)
         completed_column = builder.get_object("CompletedColumn")
         completed_renderer = builder.get_object("CompletedCellRendererToggle")
         completed_renderer.column_obj = completed_column
@@ -83,19 +85,19 @@ class MyData:
         project_sorted_renderer.column_obj = project_column_sorted
         project_sorted_renderer.column_number = 0
         project_sorted_renderer.tv = self.treeview_sort
-        project_column_sorted.set_cell_data_func(project_sorted_renderer, format_func, func_data = None)
+        project_column_sorted.set_cell_data_func(project_sorted_renderer, _format_func, func_data = None)
         context_column_sorted = builder.get_object("ContextColumnSorted")
         context_sorted_renderer = builder.get_object("ContextSortedCellRendererText")
         context_sorted_renderer.column_obj = context_column_sorted
         context_sorted_renderer.column_number = 1
         context_sorted_renderer.tv = self.treeview_sort
-        context_column_sorted.set_cell_data_func(context_sorted_renderer, format_func, func_data = None)
+        context_column_sorted.set_cell_data_func(context_sorted_renderer, _format_func, func_data = None)
         priority_column_sorted = builder.get_object("PriorityColumnSorted")
         priority_sorted_renderer = builder.get_object("PrioritySortedCellRendererSpin")
         priority_sorted_renderer.column_obj = priority_column_sorted
         priority_sorted_renderer.column_number = 2
         priority_sorted_renderer.tv = self.treeview_sort
-        priority_column_sorted.set_cell_data_func(priority_sorted_renderer, format_func, func_data = None)
+        priority_column_sorted.set_cell_data_func(priority_sorted_renderer, _format_func, func_data = None)
         completed_column_sorted = builder.get_object("CompletedColumnSorted")
         completed_sorted_renderer = builder.get_object("CompletedSortedCellRendererToggle")
         completed_sorted_renderer.column_obj = completed_column_sorted
@@ -105,10 +107,6 @@ class MyData:
         self.CurrentRecordsStoreSorted = builder.get_object("CurrentRecordsStoreSorted")
         self.CurrentRecordsStoreSorted.names = ["Project", "Context", "Priority", "Completed?"]     
         
-        self.active_tv = self.treeview_dnd
-        '''
-        Program starts with the unsorted view active.
-        '''
         self.disk_file = None
         '''
         No disk storage of records at program start.
@@ -321,8 +319,8 @@ class MyData:
                 Paths to the sorted tv's model must be converted to paths for the "real,"
                 unsorted model.
                 '''
-                path = self.CurrentRecordsStoreSorted.convert_path_to_child_path(Gtk.TreePath.new_from_string(path))
-                path = path.to_string()
+                path = self.CurrentRecordsStoreSorted.convert_path_to_child_path(Gtk.TreePath.new_from_string(path)).to_string()
+
             self.CurrentRecordsStore[path][cell.column_number] = text
 #            self.window.reshow_with_initial_size()
 
@@ -352,10 +350,10 @@ class MyData:
         if cell.tv == self.treeview_sort:
             '''
             Cells in the sorted view need to have path variables converted to paths
-            pointing to the same cell in the underlying, unsorted model.
+            pointing to the same cell in the underlying, unsorted model, in string
+            format, not Gtk.TreePath.
             '''
-            path = self.CurrentRecordsStoreSorted.convert_path_to_child_path(Gtk.TreePath.new_from_string(path))
-            path = path.to_string()
+            path = self.CurrentRecordsStoreSorted.convert_path_to_child_path(Gtk.TreePath.new_from_string(path)).to_string()
             
         if cell.get_active() == False:
             cell.set_active(True)            
@@ -369,7 +367,6 @@ class MyData:
             self.CurrentRecordsStore[path][cell.column_number] = False
 
     def on_delete_button_clicked(self, widget): # pylint: disable-msg = W0613
-        print("Clicked Delete Button")
         '''
         Iterate over the list of rows (paths) in the TreeView the user has
         selected, collect a list of TreeRowReferences that will point to
@@ -397,37 +394,37 @@ class MyData:
             for path in self.paths_selected]:
                 if row.get_path():
                     '''check if the RowReference still points to a valid Path '''
-#                if self.disk_file:
-#                    del self.disk_file['store'][row.get_path().get_indices()[0]]
+#                    if self.disk_file:
+#                        del self.disk_file['store'][row.get_path().get_indices()[0]]
                     '''
-                    Rather than delete individual records from the disk file, 
-                    we simply write the entire ListStore to disk every time
-                    there's a change to it - much simpler and not very burdensome
-                    give the small data sets used in this program. The callbacks
-                    for the signals generated by row insertion and deletion will
-                    cause the ListStore to be rewritten to disk and keep the disk
-                    file and ListStore consistent. Note, though, that the one-to-one
-                    relationship between the disk file version of the ListStore and
-                    the ListStore itself and their simple two-dimensional layout means
-                    we could use the TreePaths we derive from the RowReferences, after
-                    converting them to simple integers, as indices to the disk_file['store']
-                    data structure that could be used to delete individual records 
-                    from the disk file. The TreePaths contain a str representation
-                    of the row number in the ListStore of the records they point to.
-                    We would have to modify the disk file before the ListStore because
-                    otherwise the RowReferences would get out of sync with the disk file
-                    representation of the ListStore - the one-to-one relationship would be
-                    broken -- and the program either would delete the wrong record or (more
-                    likely) crash trying to delete a non-existent row of the disk_file['store']
-                    pointed to by an outdated TreePath.
+                        Rather than delete individual records from the disk file, 
+                        we simply write the entire ListStore to disk every time
+                        there's a change to it - much simpler and not very burdensome
+                        give the small data sets used in this program. The callbacks
+                        for the signals generated by row insertion and deletion will
+                        cause the ListStore to be rewritten to disk and keep the disk
+                        file and ListStore consistent. Note, though, that the one-to-one
+                        relationship between the disk file version of the ListStore and
+                        the ListStore itself and their simple two-dimensional layout means
+                        we could use the TreePaths we derive from the RowReferences, after
+                        converting them to simple integers, as indices to the disk_file['store']
+                        data structure that could be used to delete individual records 
+                        from the disk file. The TreePaths contain a str representation
+                        of the row number in the ListStore of the records they point to.
+                        We would have to modify the disk file before the ListStore because
+                        otherwise the RowReferences would get out of sync with the disk file
+                        representation of the ListStore - the one-to-one relationship would be
+                        broken -- and the program either would delete the wrong record or (more
+                        likely) crash trying to delete a non-existent row of the disk_file['store']
+                        pointed to by an outdated TreePath.
                     
-                    Note that Gtk.TreePath.get_indices() returns a LIST of
-                    numbers describing the path. Here this should be a single 
-                    element list, but we need a simple integer as an index, so
-                    we take the single ELEMENT of the list as our index, not 
-                    the list itself.
+                        Note that Gtk.TreePath.get_indices() returns a LIST of
+                        numbers describing the path. Here this should be a single 
+                        element list, but we need a simple integer as an index, so
+                        we take the single ELEMENT of the list as our index, not 
+                        the list itself.
                     '''
-#                    self.disk_file.sync()
+#                        self.disk_file.sync()
                     
                     del self.CurrentRecordsStore[row.get_path().get_indices()[0]]
                 
@@ -441,7 +438,7 @@ class MyData:
 #                    self.disk_file.sync()
 #                self.CurrentRecordsStore.remove(i) #pylint: disable-msg=E1103
         
-        self.window.reshow_with_initial_size()
+#        self.window.reshow_with_initial_size()
         '''
         Shrink the window down to only the size needed to display the remaining
         records. The method invoked below hides the window and reopens it to the
@@ -451,11 +448,12 @@ class MyData:
 
     def on_row_inserted(self, model, path, my_iter):
         '''
-        This and the following three methods implement the scheme of keeping the disk
+        This and the following two methods implement the scheme of keeping the disk
         file and ListStore synchronized by simply rewriting the whole disk file every
         time the ListStore changes. We need listen only to row events on the unsorted
         store because the TreeModelSort guarantees that the sorted view will automatically
-        update with the underlying ListStore.
+        update with the underlying ListStore. Hence, we needn't listen for rows-reordered
+        signals, because the ListStore will never be sorted, only the TreeModelSort.
         '''
         if self.disk_file:
             GObject.idle_add(self.rewrite_disk_file)
@@ -720,7 +718,7 @@ class MyData:
         msg.set_title("About This Program")
         msg.set_logo(GdkPixbuf.Pixbuf.new_from_file("training_wheels.jpg"))
         msg.set_program_name("Gtk Training Wheels\nData Entry Demo")
-        msg.set_version(".001 ... barely!")
+        msg.set_version(".003 ... barely!")
         msg.set_copyright(copyright_notice)
         msg.set_comments("A learning experience....\nThanks to Jens C. Knutson for all his help and inspiration.")
         msg.set_license_type(Gtk.License.GPL_3_0)
@@ -736,17 +734,21 @@ class MyData:
         '''
         Tell the user how to use the program.
         '''
-        instructions = "To start, open a data file or create one" + \
-        " by clicking 'Add Record.'\nAll record fields are mandatory;" + \
-        " Priority must be between 1 and 4,\ninclusive. Select records" + \
-        " with the mouse and click 'Delete Records'\nor select the " + \
-        "'Delete' menu item to remove them. Double click on\ndata fields" + \
-        " to edit them; hit Enter or Tab or click another cell in the\n" + \
-        "chart to save the edited record. Hit Esc or click outside the chart\n" +\
-        "to cancel edits and retrieve the old data. Use the 'Save'or 'Save As'\n" + \
-        "menuitems to save your entries to a file."
+        instructions =  "To start, open a data file or create one by clicking 'Add Record.' " + \
+                        "All record fields are mandatory; Priority must be between 1 and 4, " + \
+                        "inclusive, and Context must start with @ and have at least one " + \
+                        "additional character.\n\nSelect records with the mouse and click " + \
+                        "'Delete Records' to remove them.\n\n" + \
+                        "Double click on data fields to edit them; hit Enter or Tab or click " + \
+                        "another cell in the chart to save the edited record. Hit Esc or " + \
+                        "click outside the chart to cancel edits and retrieve the old data.\n\n" + \
+                        "Click on the 'Drag and Drop?' button to switch between a view of the " + \
+                        "records that can be rearranged by dragging and dropping records and a " + \
+                        "view that can be sorted in either direction on any field by clicking " + \
+                        "on the column headers.\n\nUse the 'Save' or 'Save As' menuitems to " + \
+                        "save your entries to a file."
                 
-        msg = Gtk.MessageDialog(self.window, Gtk.DialogFlags.MODAL, 
+        msg = Gtk.MessageDialog(None, Gtk.DialogFlags.MODAL, 
                                 Gtk.MessageType.INFO, Gtk.ButtonsType.OK, 
                                 instructions)
         msg.set_title("Program Instructions")
@@ -847,12 +849,10 @@ class MyData:
         what mode we're in now, then reverse the active_tv flag and
         swap out the relevant treeviews from the scrollable window.
         '''
-        if self.active_tv == self.treeview_dnd:
-            self.active_tv = self.treeview_sort
+        if self.scroller.get_child() == self.treeview_dnd:
             self.scroller.remove(self.treeview_dnd)
             self.scroller.add(self.treeview_sort)
         else:
-            self.active_tv = self.treeview_dnd
             self.scroller.remove(self.treeview_sort)
             self.scroller.add(self.treeview_dnd)
             
@@ -886,8 +886,8 @@ class MyData:
             '''
             leader = tv.get_columns()[i].get_title()
             follower = tv.get_columns()[i+1].get_title()
-            leader2 = get_column_by_title(leader, other_tv)
-            other_tv.move_column_after(get_column_by_title(follower, other_tv), leader2)
+            leader2 = _get_column_by_title(leader, other_tv)
+            other_tv.move_column_after(_get_column_by_title(follower, other_tv), leader2)
                
         GObject.GObject.handler_unblock_by_func(tv, self.on_columns_changed)
         GObject.GObject.handler_unblock_by_func(other_tv, self.on_columns_changed)
@@ -896,18 +896,17 @@ class MyData:
         column rearrangements.
         '''
             
-def get_column_by_title(title, tv):
+def _get_column_by_title(title, tv):
     '''
-    Given the title of a column, this returns the column object 
+    Given the title of a column in a treeview, return the column object 
     '''
-    tv_columns = tv.get_columns()
-    for i in range(len(tv_columns)):
-        if tv_columns[i].get_title() != title:
+    for column in tv.get_columns():
+        if column.get_title() != title:
             continue
-        return tv_columns[i]
+        return column
             
             
-def format_func(column, cell, model, my_iter, data = None):
+def _format_func(column, cell, model, my_iter, data = None):
     '''
     Function to format cell contents depending upon Priority
     and Completed values.
