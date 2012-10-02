@@ -39,6 +39,10 @@ class MyData:
         self.treeview_dnd = builder.get_object("treeview_dnd")
         project_column = builder.get_object("ProjectColumn")
         project_renderer = builder.get_object("ProjectCellRendererText")
+        '''
+        Associate each renderer (cell) with its column and column number
+        and treeview for ease of use in signal handling.
+        '''
         project_renderer.column_obj = project_column
         project_renderer.column_number = 0
         project_renderer.tv = self.treeview_dnd
@@ -66,6 +70,9 @@ class MyData:
         the data in those records were taken.
         '''
         self.selection = builder.get_object("treeview-selection")
+        '''
+        The ListStore used for in-memory storage and display of the data.
+        '''
         self.CurrentRecordsStore = builder.get_object("CurrentRecordsStore")
         self.CurrentRecordsStore.names = ["Project", "Context", "Priority", "Completed?"]     
         self.paths_selected = None
@@ -211,9 +218,10 @@ class MyData:
             self.on_add_button_clicked(widget, record)            
         else:
             '''
-            If the data are valid, append them to the ListStore and, if a disk
-            file is open for this ListStore, save the new record to that, too.
-            We're not concerned with sorting and order in these data stores
+            If the data are valid, append them to the ListStore. If a disk
+            file is open for this ListStore, the callback for the row_inserted
+            signal will add the record to the disk file, so we needn't do that
+            here. We're not concerned with sorting and order in the data stores
             here - just add the new record to the end.
             '''
             row = [record['project'], record['context'], record['priority'], record['completed']]
@@ -231,6 +239,10 @@ class MyData:
             if cell.tv.get_model().get_column_type(cell.column_number) == GObject.TYPE_INT:
                 self.invalid_text_for_retry = str(self.invalid_text_for_retry)
             cell_editable.set_text(self.invalid_text_for_retry)
+            '''
+            Reset flag and invalid text variables to their defaults now that we've
+            set up the Gtk.Entry
+            '''
             self.validate_retry = False
             self.invalid_text_for_retry = ""
 
@@ -242,7 +254,7 @@ class MyData:
         '''
 
         my_iter = self.CurrentRecordsStore.get_iter(self.paths_selected[0])
-        cell.set_property("text", self.CurrentRecordsStore.get_value(my_iter, cell.column_number))
+        
         '''
         The treeview's selection mode is set to MULTIPLE, but if we're editing a
         cell, only a single row will have been selected. This gives us a single-
@@ -251,6 +263,11 @@ class MyData:
         data for this cell from the model. We don't need to deal with conversions
         for cells in the sorted tv because the on_selection_changed method takes
         care of that.
+        '''
+        cell.set_property("text", self.CurrentRecordsStore.get_value(my_iter, cell.column_number))
+        '''
+        We associated the number of the column in which each cellrenderer fell with
+        the cellrenderer because of calls like the one immediately above.
         '''
             
     def validation_on_edited(self, cell, path, text):       
@@ -263,12 +280,12 @@ class MyData:
         but the approach taken here is more generalized.
         
         The "text" parameter emitted with the "edited" signal is a str representation
-        of the new data the user entered into the edited cell. If the relevant column 
-        in the ListStore is expecting an int, we need to cast the str as an int. The
-        SpinButton used for entry of data in the Priority column ensures that "text"
-        will always be a str representation of a double between 1.0 and 4.0,
-        inclusive, so we need only cast it as an int - no bounds checking needed
-        here.
+        of the new data the user entered into the edited cell. The SpinButton used
+        for entry of data in the Priority column ensures that "text" will always be
+        a str representation of a double between 1.0 and 4.0, inclusive, so we need to
+        cast it as an int do the ListStore will accept it. Bounds checking is still
+        needed here also because the user could enter an invalid Priority value from
+        the keyboard.
         '''
         if text.isdigit():
             text = int(text)
@@ -311,7 +328,8 @@ class MyData:
             if cell.tv == self.treeview_sort:
                 '''
                 Paths to the sorted tv's model must be converted to paths for the "real,"
-                unsorted model.
+                unsorted model. Python can accept str representations of ints as list
+                indices, so no cast to int required.
                 '''
                 path = self.CurrentRecordsStoreSorted.convert_path_to_child_path(Gtk.TreePath.new_from_string(path)).to_string()
 
@@ -328,7 +346,7 @@ class MyData:
                                              True)
         return False
         '''
-        Return False so that this method won't go on running forever.
+        Return False so that this method called from idle_add() won't go on running forever.
         '''
     def on_completed_toggled(self, cell, path):
         '''
@@ -346,7 +364,7 @@ class MyData:
             path = self.CurrentRecordsStoreSorted.convert_path_to_child_path(Gtk.TreePath.new_from_string(path)).to_string()
         '''
         Reverse the value stored at the appropriate location in the ListStore. The
-        display updates automatically.
+        display updates automatically. Note the use of the column_number association.
         '''                
         self.CurrentRecordsStore[path][cell.column_number] = not self.CurrentRecordsStore[path][cell.column_number]
 
@@ -393,36 +411,25 @@ class MyData:
                     Note that Gtk.TreePath.get_indices() returns a TUPLE of
                     numbers describing the path. Here this should be a single 
                     element tuple, but we need a simple integer as an index, so
-                    we take the single ELEMENT of the list as our index, not 
-                    the list itself.
+                    we take the single ELEMENT of the tuple as our index, not 
+                    the tuple itself.
                     '''
 #                        self.disk_file.sync()
                     
                     del self.CurrentRecordsStore[row.get_path().get_indices()[0]]
                 
 # Delete method using iters on the ListStore:
-#        for i in [self.CurrentRecordsStore.get_iter(row) for row in self.paths_selected]: #pylint: disable-msg = E1103
-#            if i:
-#                if self.disk_file:                   
-#                    del self.disk_file["store"
-#                        ][self.CurrentRecordsStore.get_path(i).get_indices(
-#                        )[0]]
-#                    self.disk_file.sync()
-#                self.CurrentRecordsStore.remove(i) #pylint: disable-msg=E1103
+#        for record in [self.CurrentRecordsStore.get_iter(row) for row in self.paths_selected]: #pylint: disable-msg = E1103
+#            if record:               
+#                self.CurrentRecordsStore.remove(record) #pylint: disable-msg=E1103
         
-#        self.window.reshow_with_initial_size()
-        '''
-        Shrink the window down to only the size needed to display the remaining
-        records. The method invoked below hides the window and reopens it to the
-        size needed to contain the visible widgets now contained in it, just as
-        when a window is initially opened.
-        '''
+
 
     def on_row_inserted(self, model, path, my_iter):
         '''
         This and the following two methods implement the scheme of keeping the disk
         file and ListStore synchronized by updating the disk_file when the ListStore
-        signals an insertion, change, or deletion. We need listen only to row events
+        signals a row insertion, change, or deletion. We need listen only to row events
         on the unsorted store because the TreeModelSort guarantees that the sorted
         view will automatically update with the underlying ListStore. Hence, we needn't
         listen for rows-reordered signals, because the ListStore will never be sorted,
@@ -430,12 +437,13 @@ class MyData:
         '''
         if self.disk_file:
             '''
-            The disk storage of records is done by shelving a list of lists. The path
+            Disk storage is done by shelving a list of lists - disk_file['store']. The path
             parameter tells us where in the list of lists to insert the list representing
             the row that was inserted in the ListStore. This works because the ListStore
-            and the disk_file are always in a one-to-one relationship. We construct a
-            list to be inserted into the disk file from the values found in the corresponding
-            row of the ListStore.
+            and the disk_file are always in a one-to-one relationship so that the path value
+            not only represents the row number in the ListStore, it also works as the index
+            for that row in self.disk_file['store']. We construct a list to be inserted into
+            the disk file from the values found in the corresponding row of the ListStore.
             '''
             row = [model.get_value(my_iter, i) for i in range(model.get_n_columns())]
             self.disk_file['store'].insert(int(path.to_string()), row)   
@@ -444,11 +452,10 @@ class MyData:
         if self.disk_file:
             '''
             The one-to-one relationship between disk_file and ListStore allows us
-            to use the path variable as an index for the list to be deleted from
+            to use the path parameter as an index to the list to be deleted from
             the disk file list of lists when a record is deleted.
             '''
             del self.disk_file['store'][int(path.to_string())]
-#            GObject.idle_add(self.rewrite_disk_file)
             
     def on_row_changed(self, model, path, my_iter, data = None):
         
@@ -461,29 +468,7 @@ class MyData:
             '''
             row = [model.get_value(my_iter, i) for i in range(model.get_n_columns())]
             self.disk_file['store'][int(path.to_string())] = row
-#            GObject.idle_add(self.rewrite_disk_file)
 
-#    def rewrite_disk_file(self):
-#        '''
-#        Function to rewrite the disk file to keep it in the same order
-#        as the ListStore after a sort column change or addition of a
-#        new record with a sort order in effect. We first erase the
-#        existing disk file.
-#        '''
-#        del self.disk_file["store"][:]
-#        self.disk_file.sync()
-#        '''
-#        After erasing the disk_file, copy the reordered ListStore to the disk_file.
-#        '''
-#        for row in self.CurrentRecordsStore:
-#            self.disk_file["store"].append(row[:])
-#            self.disk_file.sync()
-#        print("Disk file rewritten.")
-#        return False
-#        '''
-#        This function called from GObject.idle_add, returns False so that
-#        it doesn't run forever.
-#        '''              
     def on_selection_changed(self, selection):        
         '''
         The TreeViewSelection contains references to the rows in the TreeView the
@@ -565,7 +550,7 @@ class MyData:
                 self.CurrentRecordsStore.names = self.disk_file["names"]
                 '''
                 Now read the record data row-by-row into the CurrentDataStore.
-                Block disk_rewrite until we're done so we don't rewrite into 
+                Block row_inserted until we're done so we don't rewrite into 
                 the disk file and duplicate every row inserted into the ListStore
                 from the disk file.
                 '''
@@ -721,7 +706,7 @@ class MyData:
         msg.set_title("About This Program")
         msg.set_logo(GdkPixbuf.Pixbuf.new_from_file("training_wheels.jpg"))
         msg.set_program_name("Gtk Training Wheels\nData Entry Demo")
-        msg.set_version(".003 ... barely!")
+        msg.set_version(".004 ... barely!")
         msg.set_copyright(copyright_notice)
         msg.set_comments("A learning experience....\nThanks to Jens C. Knutson for all his help and inspiration.")
         msg.set_license_type(Gtk.License.GPL_3_0)
@@ -794,7 +779,8 @@ class MyData:
             '''
             If column calls for a number, it must be between 1 and 4. The
             Spinbutton and its adjustment should guarantee compliance, but
-            we check here for the sake of completeness.
+            we check here because the user could enter an invalid value from
+            the keyboard.
             '''
             if ((not isinstance(text, int)) or ((text < 1) or (text > 4))):
                 msg = Gtk.MessageDialog(None, Gtk.DialogFlags.MODAL,
@@ -849,8 +835,8 @@ class MyData:
         '''
         Toggle the 'Drag'n Drop?' button to switch between unsorted, 
         drag'n drop mode to sorted but no drag'n drop. First check
-        what mode we're in now, then reverse the active_tv flag and
-        swap out the relevant treeviews from the scrollable window.
+        what mode we're in now, then reverse the treeview contained
+        in the scrollable window.
         '''
         if self.scroller.get_child() == self.treeview_dnd:
             self.scroller.remove(self.treeview_dnd)
@@ -861,13 +847,13 @@ class MyData:
             
     def on_columns_changed(self, tv, data = None):
         '''
-        This method keeps the columns of the sorted and unsorted views
-        in the same order when the user changes column order on either
-        view.
+        This method keeps the columns of the sorted and unsorted treeviews
+        in the same order when the user changes column order in either
+        treeview.
         '''
         if tv == self.treeview_dnd:
             '''
-            First detect which view got its column rearranged.
+            First detect which view got its columns rearranged.
             '''
             other_tv = self.treeview_sort
         else:
