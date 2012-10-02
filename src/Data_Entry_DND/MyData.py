@@ -113,7 +113,6 @@ class MyData:
         completed_sorted_renderer.tv = self.treeview_sort
         self.sorted_selection = builder.get_object("treeview_sort_selection")
         self.CurrentRecordsStoreSorted = builder.get_object("CurrentRecordsStoreSorted")
-#        self.CurrentRecordsStoreSorted.names = ["Project", "Context", "Priority", "Completed?"]     
         
         self.disk_file = None
         '''
@@ -328,8 +327,9 @@ class MyData:
             if cell.tv == self.treeview_sort:
                 '''
                 Paths to the sorted tv's model must be converted to paths for the "real,"
-                unsorted model. Python can accept str representations of ints as list
-                indices, so no cast to int required.
+                unsorted model. Python can accept str representations of a path as Gtk.ListStore
+                indices, so no cast to int required, unlike the ordinary Python lists used
+                in the shelved disk file.
                 '''
                 path = self.CurrentRecordsStoreSorted.convert_path_to_child_path(Gtk.TreePath.new_from_string(path)).to_string()
 
@@ -364,7 +364,7 @@ class MyData:
             path = self.CurrentRecordsStoreSorted.convert_path_to_child_path(Gtk.TreePath.new_from_string(path)).to_string()
         '''
         Reverse the value stored at the appropriate location in the ListStore. The
-        display updates automatically. Note the use of the column_number association.
+        display updates automatically. Note the use of the column_number association. 
         '''                
         self.CurrentRecordsStore[path][cell.column_number] = not self.CurrentRecordsStore[path][cell.column_number]
 
