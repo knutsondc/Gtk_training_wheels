@@ -207,7 +207,6 @@
             <child>
               <object class="GtkImageMenuItem" id="file_menu_item">
                 <property name="label">gtk-file</property>
-                <property name="use_action_appearance">False</property>
                 <property name="visible">True</property>
                 <property name="can_focus">False</property>
                 <property name="use_underline">True</property>
@@ -223,7 +222,6 @@
                     <child>
                       <object class="GtkImageMenuItem" id="new_menu_item">
                         <property name="label">gtk-new</property>
-                        <property name="use_action_appearance">False</property>
                         <property name="visible">True</property>
                         <property name="can_focus">False</property>
                         <property name="use_underline">True</property>
@@ -237,7 +235,6 @@
                     <child>
                       <object class="GtkImageMenuItem" id="open_menu_item">
                         <property name="label">gtk-open</property>
-                        <property name="use_action_appearance">False</property>
                         <property name="visible">True</property>
                         <property name="can_focus">False</property>
                         <property name="use_underline">True</property>
@@ -251,7 +248,6 @@
                     <child>
                       <object class="GtkImageMenuItem" id="save_menu_item">
                         <property name="label">gtk-save</property>
-                        <property name="use_action_appearance">False</property>
                         <property name="visible">True</property>
                         <property name="can_focus">False</property>
                         <property name="use_underline">True</property>
@@ -265,7 +261,6 @@
                     <child>
                       <object class="GtkImageMenuItem" id="save_as_menu_item">
                         <property name="label">gtk-save-as</property>
-                        <property name="use_action_appearance">False</property>
                         <property name="visible">True</property>
                         <property name="can_focus">False</property>
                         <property name="use_underline">True</property>
@@ -285,7 +280,6 @@
                     <child>
                       <object class="GtkImageMenuItem" id="quit_menu_item">
                         <property name="label">gtk-quit</property>
-                        <property name="use_action_appearance">False</property>
                         <property name="visible">True</property>
                         <property name="can_focus">False</property>
                         <property name="use_underline">True</property>
@@ -303,7 +297,6 @@
             <child>
               <object class="GtkImageMenuItem" id="help_menu_item">
                 <property name="label">gtk-help</property>
-                <property name="use_action_appearance">False</property>
                 <property name="visible">True</property>
                 <property name="can_focus">False</property>
                 <property name="use_underline">True</property>
@@ -319,7 +312,6 @@
                     <child>
                       <object class="GtkImageMenuItem" id="about_menu_item">
                         <property name="label">_About</property>
-                        <property name="use_action_appearance">False</property>
                         <property name="visible">True</property>
                         <property name="can_focus">False</property>
                         <property name="use_underline">True</property>
@@ -334,7 +326,6 @@
                     <child>
                       <object class="GtkImageMenuItem" id="instructions_menu_item">
                         <property name="label">_Instructions</property>
-                        <property name="use_action_appearance">False</property>
                         <property name="visible">True</property>
                         <property name="can_focus">False</property>
                         <property name="use_underline">True</property>
@@ -368,15 +359,15 @@
                 <property name="can_focus">True</property>
                 <property name="model">CurrentRecordsStore</property>
                 <property name="headers_clickable">False</property>
-                <property name="reorderable">True</property>
                 <property name="enable_search">False</property>
                 <property name="search_column">0</property>
                 <property name="show_expanders">False</property>
                 <property name="enable_grid_lines">both</property>
+                <signal name="drag-data-received" handler="drag_data_received" swapped="no"/>
                 <signal name="columns-changed" handler="on_columns_changed" swapped="no"/>
+                <signal name="drag-data-get" handler="drag_data_get" swapped="no"/>
                 <child internal-child="selection">
-                  <object class="GtkTreeSelection" id="treeview-selection">
-                    <property name="mode">multiple</property>
+                  <object class="GtkTreeSelection" id="treeview-selection2">
                     <signal name="changed" handler="on_selection_changed" swapped="no"/>
                   </object>
                 </child>
@@ -490,13 +481,11 @@
             <child>
               <object class="GtkButton" id="add_record_button">
                 <property name="label" translatable="yes">_Add Record</property>
-                <property name="use_action_appearance">False</property>
                 <property name="visible">True</property>
                 <property name="can_focus">True</property>
                 <property name="can_default">True</property>
                 <property name="has_default">True</property>
                 <property name="receives_default">True</property>
-                <property name="use_action_appearance">False</property>
                 <property name="use_underline">True</property>
                 <signal name="clicked" handler="on_add_button_clicked" swapped="no"/>
               </object>
@@ -509,12 +498,10 @@
             <child>
               <object class="GtkToggleButton" id="dnd_toggle_button">
                 <property name="label" translatable="yes">D_rag and Drop?</property>
-                <property name="use_action_appearance">False</property>
                 <property name="visible">True</property>
                 <property name="can_focus">True</property>
                 <property name="receives_default">True</property>
                 <property name="border_width">1</property>
-                <property name="use_action_appearance">False</property>
                 <property name="use_underline">True</property>
                 <property name="active">True</property>
                 <signal name="toggled" handler="on_dnd_toggle_button_toggled" swapped="no"/>
@@ -529,11 +516,9 @@
             <child>
               <object class="GtkButton" id="delete_record_button">
                 <property name="label" translatable="yes">_Delete Record(s)</property>
-                <property name="use_action_appearance">False</property>
                 <property name="visible">True</property>
                 <property name="can_focus">True</property>
                 <property name="receives_default">True</property>
-                <property name="use_action_appearance">False</property>
                 <property name="use_underline">True</property>
                 <signal name="clicked" handler="on_delete_button_clicked" swapped="no"/>
               </object>
