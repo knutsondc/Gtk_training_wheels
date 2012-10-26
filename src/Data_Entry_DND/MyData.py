@@ -1,4 +1,5 @@
 from Model import AddRecordDialog   #@UnresolvedImport
+from History import Action, History #@UnresolvedImport
 import os
 import shelve
 import json                         #Needed for encoding drag'n'drop data
@@ -155,7 +156,7 @@ class MyData:
         for the unsorted treeview. These are the targets that actually get used; as of now, drag and drop
         won't work without these two methods.
         '''
-        
+        self.history = History()
         
     def on_window_delete(self, widget, event): # pylint: disable-msg = w0613
         '''
@@ -251,8 +252,29 @@ class MyData:
             here - just add the new record to the end.
             '''
             row = [record['project'], record['context'], record['priority'], record['completed']]
-            self.CurrentRecordsStore.append(row) # pylint: disable-msg = E1103
+            '''
+            Next two functions are the "do" and "undo" for adding a record that get added to the 
+            undo/redo history stack.
+            '''
+            perform = (self.add_new_row, [self.CurrentRecordsStore, row])
+            revert = (self.delete_added_row, [self.CurrentRecordsStore])
+            self.history.add(perform, revert)
+#            self.CurrentRecordsStore.append(row) # pylint: disable-msg = E1103
 
+    def add_new_row(self, liststore, row):
+        '''
+        The "do" function for adding a new record.
+        '''
+        liststore.append(row)
+        return
+    
+    def delete_added_row(self, liststore):
+        '''
+        The function to "undo" the addition of a new record.
+        '''
+        del liststore[len(liststore)-1]
+        return
+    
     def validation_on_editing_started(self, cell, cell_editable, row):
         '''
         This method gives us access to the Gtk.Entry used by a CellRendererText
@@ -361,7 +383,14 @@ class MyData:
                 path = self.CurrentRecordsStoreSorted.convert_path_to_child_path(Gtk.TreePath.new_from_string(path)).to_string()
 
 #            self.CurrentRecordsStore.set_value(self.CurrentRecordsStore.get_iter_from_string(path), cell.column_number, text)
-            self.CurrentRecordsStore[path][cell.column_number] = text
+            old_text = self.CurrentRecordsStore[path][cell.column_number]
+            '''
+            The "do" and "undo" of the edit are pushed onto the undo/redo stack
+            '''
+            perform = (self.enter_edit, [self.CurrentRecordsStore, path, cell, text])
+            revert = (self.enter_edit, [self.CurrentRecordsStore, path, cell, old_text])
+            self.history.add(perform, revert)
+#            self.CurrentRecordsStore[path][cell.column_number] = text
 #            self.window.reshow_with_initial_size()
 
     def restart_edit(self, tv, path, col):
@@ -377,6 +406,12 @@ class MyData:
         '''
         Return False so that this method called from idle_add() won't go on running forever.
         '''
+    def enter_edit(self, liststore, path, cell, text):
+        '''
+        Function for final entry of edits or undo or edits.
+        '''
+        liststore[path][cell.column_number] = text
+    
     def on_completed_toggled(self, cell, path):
         '''
         What to do if the user clicks a box in the "Completed?" column. Params sent
@@ -394,9 +429,18 @@ class MyData:
         '''
         Reverse the value stored at the appropriate location in the ListStore. The
         display updates automatically. Note the use of the column_number association. 
-        '''                
-        self.CurrentRecordsStore[path][cell.column_number] = not self.CurrentRecordsStore[path][cell.column_number]
+        '''
+        perform = (self.toggle_completed, [cell, path])
+        revert = (self.toggle_completed, [cell, path])
+        self.history.add(perform, revert)                
+#        self.CurrentRecordsStore[path][cell.column_number] = not self.CurrentRecordsStore[path][cell.column_number]
 
+    def toggle_completed(self, cell, path):
+        '''
+        The "do" and "undo" function for the toggle of the "Completed" column.
+        '''
+        self.CurrentRecordsStore[path][cell.column_number] = not self.CurrentRecordsStore[path][cell.column_number]
+        
     def on_delete_button_clicked(self, widget): # pylint: disable-msg = W0613
         '''
         Iterate over the list of rows (paths) in the TreeView the user has
@@ -412,12 +456,12 @@ class MyData:
         Note that this could be done with iters on the ListStore - see
         commented out code below.
         '''
-        for row in [Gtk.TreeRowReference.new(self.CurrentRecordsStore, path) for path in self.paths_selected]:
-            if row.get_path():
-                '''check if the RowReference still points to a valid Path '''
+#        for row in [Gtk.TreeRowReference.new(self.CurrentRecordsStore, path) for path in self.paths_selected]:
+#            if row.get_path():
+#                '''check if the RowReference still points to a valid Path '''
 ##                    if self.disk_file:
 ##                        del self.disk_file['store'][row.get_path().get_indices()[0]]
-                '''
+        '''
                 The callbacks for the signals generated by row insertion and
                 deletion will cause the ListStore's changed state to be written
                 to disk and keep the disk file and ListStore consistent. Note
@@ -441,20 +485,42 @@ class MyData:
                 element tuple, but we need a simple integer as an index, so
                 we take the single ELEMENT of the tuple as our index, not 
                 the tuple itself.
-                '''
+        '''
 ##                        self.disk_file.sync()
 #                    
-                del self.CurrentRecordsStore[row.get_path().get_indices()[0]]
-                
+#                del self.CurrentRecordsStore[row.get_path().get_indices()[0]]
+        if not self.paths_selected:
+            '''
+            No records selected for deletion - do nothing.
+            '''
+            return        
 # Delete method using iters on the ListStore:
-#        for record in [self.CurrentRecordsStore.get_iter(row) for row in self.paths_selected]: #pylint: disable-msg = E1103
-#            if record:               
+        for record in [self.CurrentRecordsStore.get_iter(row) for row in self.paths_selected]: #pylint: disable-msg = E1103
+            if record:
+                '''
+                For each record selected for deletion, first check to see if the iter pointing to
+                the record is still valid.
+                '''
+                row = self.CurrentRecordsStore.get_path(record)
+                data = [self.CurrentRecordsStore.get_value(record, i) for i in range(self.CurrentRecordsStore.get_n_columns())]
+                '''
+                Save the data from each record to be deleted so the deletion can be reverted, if desired. 
+                '''
+                perform = (self.CurrentRecordsStore.remove, [record])
+                '''
+                Perform the deletion
+                '''
+                revert = (self.CurrentRecordsStore.insert, [int(row.to_string()), data])
+                '''
+                Provide the function needed to undo the deletion.
+                '''
+                self.history.add(perform, revert)
+                '''
+                Push the deletion and its reversion onto the undo/redo history stack.
+                '''
 #                self.CurrentRecordsStore.remove(record) #pylint: disable-msg=E1103
-
+    
     def drag_data_get(self, tv, context, selection, target_id, time):
-#        treeselection = tv.get_selection()
-#        model, my_iter = treeselection.get_selected()
-#        path = model.get_path(my_iter)
         model = tv.get_model()
         path = self.paths_selected[0]
         '''
@@ -464,7 +530,7 @@ class MyData:
         '''
         my_iter = model.get_iter(path)
         row = [model.get_value(my_iter, i) for i in range(model.get_n_columns())]
-        row.append(path.to_string())
+        row.append(int(path.to_string()))
         '''
         First, construct a data object consisting of a treeview row and its path number
         to be used as the drag and drop data.
@@ -475,11 +541,6 @@ class MyData:
         into a single string, which we encode as a Python UTF-8 byte string for use in a 
         Gtk.SelectionData object.
         '''
-#        result = Gtk.TreeDragSource.drag_data_get(model, path, selection)
-#        print("Drag_data_get result: {0}".format(result))
-#        result = Gtk.tree_set_row_drag_data(selection, model, path)
-#        print("Set_row_drag_data result: {0}.".format(result))
-#        data = bytearray(treeselection)
         selection.set(selection.get_target(), 8, data)
         '''
         Finally, set the selection data object to the drag and drop data we've prepared.
@@ -492,10 +553,11 @@ class MyData:
         The Gtk.SelectionData object we packed in drag_data_get gets decoded and unpacked into
         its original form here.
         '''
-        old_path = row.pop()
+        old_path_n = row.pop()
+        old_path = Gtk.TreePath.new_from_string(str(old_path_n))
         '''
         Strip off the path the treeview row to be moved originally had for later use in tracking
-        where drag and drop data came from.
+        where drag and drop data came from and performing undo/redo.
         '''
         drop_info = tv.get_dest_row_at_pos(x, y)
         '''
@@ -504,43 +566,78 @@ class MyData:
         the model.
         '''
         if drop_info:
-            path, position = drop_info
-            my_iter = model.get_iter(path)
+            target_path, position = drop_info
+            target = int(target_path.to_string())
             '''
             Now insert the data from the drag and drop according to where it was dropped and
             keep track of changes as they're made so undo/redo becomes possible.
             '''
             if (position == Gtk.TreeViewDropPosition.BEFORE
-                or position == Gtk.TreeViewDropPosition.INTO_OR_BEFORE):
-                
-                print("Moved row {0}, {1}, before row {2}.".format(old_path, row, path))
-                if(int(old_path) < int(path.to_string())):
-                    print("I.e., moved row {0} to row {1}".format(old_path, int(path.to_string())-1))
-                else:
-                    print("I.e., moved row {0} to row {1}".format(old_path, int(path.to_string())))
-                model.insert_before(my_iter, row)
-                
+                or position == Gtk.TreeViewDropPosition.INTO_OR_BEFORE):                
+#                print("Moved row {0}, {1}, before row {2}.".format(old_path_n, row, target))
+#                print("I.e., moved row {0} to row {1}".format(old_path_n, target))
+                '''
+                A "before" drop means the new path is always equal to the target value when
+                doing the initial move; when reverting a move, old_path_n must be incremented
+                by one because the original move inserted a row into the model. 
+                '''
+                perform = (self.move_row,[model, old_path, target])
+                revert = (self.move_row, [model, target_path, old_path_n+1])
+                self.history.add(perform, revert)
+#                model.insert_before(my_iter, row)                
             else:
-                print("Moved row {0}, {1}, after row {2}.".format(old_path, row, path))
-                if(int(old_path) > int(path.to_string())):
-                    print("I.e., moved row {0} to row {1}".format(old_path, int(path.to_string())+1))
-                else:
-                    print("I.e., moved row {0} to row {1}".format(old_path, int(path.to_string())))
-                model.insert_after(my_iter, row)
+#                print("Moved row {0}, {1}, after row {2}.".format(old_path_n, row, target_path))
+#                print("I.e., moved row {0} to row {1}".format(old_path_n, target+1))
+                '''
+                An "after" drop means the position of the new path must be one greater than the
+                target for the initial move; the path for a reversion must back out that increment.
+                '''
+#                new_path = Gtk.TreePath.new_from_string(str(target+1))
+#                revert_path = Gtk.TreePath.new_from_string(str(target))
+                perform = (self.move_row,[model, old_path, target+1])
+                revert = (self.move_row, [model, target_path, old_path_n])
+                self.history.add(perform, revert)
+#                model.insert_after(my_iter, row)
                 
         else:
-            print("Inserted {0} after last row: {1}.".format(row, model.get_n_columns()))
-            print("I.e., move row {0} to row {1}.".format(old_path, model.get_n_columns()))
-            model.append(row)
-            
-        if context.get_actions() == Gdk.DragAction.MOVE|Gdk.DragAction.DEFAULT:
-            '''
-            Tell the context in which the drag and drop occurred that the data in the row that's been
-            moved can be deleted from the row it originally was in.
-            '''
-            context.finish(True, True, time)
+#            print("Inserted {0} after last row: {1}.".format(row, len(model)))
+#            print("I.e., move row {0} to row {1}.".format(old_path, len(model)))
+#            new_path = Gtk.TreePath.new_from_string(str(len(model)))
+            new_path_n = len(model)
+            revert_path = Gtk.TreePath.new_from_string(str(len(model)-1))
+#            print("New path = {0}".format(new_path_n))
+            perform = (self.move_row, [model, old_path, new_path_n])
+            revert = (self.move_row, [model, revert_path, old_path_n])
+            self.history.add(perform, revert)
+#            model.append(row)
+
+#    Lines calling upon the DragContext to delete a moved row are commented out
+#    because we delete a moved row by hand to more easily accommodate undo/redo
+
+#        if context.get_actions() == Gdk.DragAction.MOVE|Gdk.DragAction.DEFAULT:
+#            '''
+#            Tell the context in which the drag and drop occurred that the data in the row that's been
+#            moved can be deleted from the row it originally was in.
+#            '''
+#            context.finish(True, True, time)
         return   
    
+    def move_row(self, model, path, position):
+        '''
+        Copy data from source row to target row and then delete the source row - i.e., move the row
+        from source to destination. This is used both for drag and drop and to undo DnD. Path is 
+        the source row, position the integer value of the row to move to.
+        '''
+        my_iter = model.get_iter(path)
+        ''' First copy the data from the source row '''
+        row = [model.get_value(my_iter, i) for i in range(model.get_n_columns())]
+#        print("Row to restore: {0}".format(position))
+        model.insert(position, row)
+        ''' Insert the data to the target (new) position '''
+#        print("Row to delete: {0}".format(model.get_path(my_iter)))
+        model.remove(my_iter)
+        ''' Finally, delete the source row to complete the move. '''
+    
     def on_row_inserted(self, model, path, my_iter):
         '''
         This and the following two methods implement the scheme of keeping the disk
@@ -809,10 +906,18 @@ class MyData:
         Exit the program?
         '''
         self.on_window_delete(widget, None)
-    '''
-    Edit menu removed - the Gnome Desktop clipboard already supplies all the
-    intended functions.
-    '''
+        
+    def on_undo_menu_item_activate(self, widget):
+        '''
+        Retrieve an "undo" function and data from the history stack.
+        '''
+        self.history.undo()
+        
+    def on_redo_menu_item_activate(self, widget):
+        '''
+        Retrieve a "do" function and data from the history stack.
+        '''
+        self.history.redo()
         
     def on_about_menu_item_activate(self, widget):
         '''
@@ -824,7 +929,7 @@ class MyData:
         msg.set_title("About This Program")
         msg.set_logo(GdkPixbuf.Pixbuf.new_from_file("training_wheels.jpg"))
         msg.set_program_name("Gtk Training Wheels\nData Entry Demo")
-        msg.set_version(".004 ... barely!")
+        msg.set_version(".01 ... barely!")
         msg.set_copyright(copyright_notice)
         msg.set_comments("A learning experience....\nThanks to Jens C. Knutson for all his help and inspiration.")
         msg.set_license_type(Gtk.License.GPL_3_0)
@@ -852,7 +957,10 @@ class MyData:
                         "records that can be rearranged by dragging and dropping records and a " + \
                         "view that can be sorted in either direction on any field by clicking " + \
                         "on the column headers.\n\nUse the 'Save' or 'Save As' menuitems to " + \
-                        "save your entries to a file."
+                        "save your entries to a file.\n\n" + \
+                        "Use the Edit Menu or shortcut keys to undo/redo entry or deletion of " + \
+                        "a record, edits of a record, or any reordering of records done through " + \
+                        "Drag and Drop.\n"
                 
         msg = Gtk.MessageDialog(None, Gtk.DialogFlags.MODAL, 
                                 Gtk.MessageType.INFO, Gtk.ButtonsType.OK, 

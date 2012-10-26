@@ -27,16 +27,12 @@
     <property name="page_increment">4</property>
   </object>
   <object class="GtkAccelGroup" id="accel_group"/>
-  <object class="GtkImage" id="image1">
+  <object class="GtkImage" id="image2">
     <property name="visible">True</property>
     <property name="can_focus">False</property>
+    <property name="xalign">0.41999998688697815</property>
     <property name="stock">gtk-info</property>
-  </object>
-  <object class="GtkImage" id="image7">
-    <property name="visible">True</property>
-    <property name="can_focus">False</property>
-    <property name="ypad">9</property>
-    <property name="stock">gtk-about</property>
+    <property name="icon-size">1</property>
   </object>
   <object class="GtkTreeView" id="treeview_sort">
     <property name="visible">True</property>
@@ -201,7 +197,7 @@
           </packing>
         </child>
         <child>
-          <object class="GtkMenuBar" id="menubar">
+          <object class="GtkMenuBar" id="MenuBar">
             <property name="visible">True</property>
             <property name="can_focus">False</property>
             <child>
@@ -295,6 +291,51 @@
               </object>
             </child>
             <child>
+              <object class="GtkImageMenuItem" id="edit_menu_item">
+                <property name="label">gtk-edit</property>
+                <property name="visible">True</property>
+                <property name="can_focus">False</property>
+                <property name="use_underline">True</property>
+                <property name="use_stock">True</property>
+                <property name="accel_group">accel_group</property>
+                <property name="always_show_image">True</property>
+                <accelerator key="e" signal="activate" modifiers="GDK_CONTROL_MASK"/>
+                <child type="submenu">
+                  <object class="GtkMenu" id="edit_menu">
+                    <property name="visible">True</property>
+                    <property name="can_focus">False</property>
+                    <property name="accel_group">accel_group</property>
+                    <child>
+                      <object class="GtkImageMenuItem" id="undo_menu_item">
+                        <property name="label">gtk-undo</property>
+                        <property name="visible">True</property>
+                        <property name="can_focus">False</property>
+                        <property name="use_underline">True</property>
+                        <property name="use_stock">True</property>
+                        <property name="accel_group">accel_group</property>
+                        <property name="always_show_image">True</property>
+                        <accelerator key="z" signal="activate" modifiers="GDK_CONTROL_MASK"/>
+                        <signal name="activate" handler="on_undo_menu_item_activate" swapped="no"/>
+                      </object>
+                    </child>
+                    <child>
+                      <object class="GtkImageMenuItem" id="redo_menu_item">
+                        <property name="label">gtk-redo</property>
+                        <property name="visible">True</property>
+                        <property name="can_focus">False</property>
+                        <property name="use_underline">True</property>
+                        <property name="use_stock">True</property>
+                        <property name="accel_group">accel_group</property>
+                        <property name="always_show_image">True</property>
+                        <accelerator key="y" signal="activate" modifiers="GDK_CONTROL_MASK"/>
+                        <signal name="activate" handler="on_redo_menu_item_activate" swapped="no"/>
+                      </object>
+                    </child>
+                  </object>
+                </child>
+              </object>
+            </child>
+            <child>
               <object class="GtkImageMenuItem" id="help_menu_item">
                 <property name="label">gtk-help</property>
                 <property name="visible">True</property>
@@ -305,18 +346,17 @@
                 <property name="always_show_image">True</property>
                 <accelerator key="h" signal="activate" modifiers="GDK_CONTROL_MASK"/>
                 <child type="submenu">
-                  <object class="GtkMenu" id="helpmenu">
+                  <object class="GtkMenu" id="help_menu">
                     <property name="visible">True</property>
                     <property name="can_focus">False</property>
                     <property name="accel_group">accel_group</property>
                     <child>
                       <object class="GtkImageMenuItem" id="about_menu_item">
-                        <property name="label">_About</property>
+                        <property name="label">gtk-about</property>
                         <property name="visible">True</property>
                         <property name="can_focus">False</property>
                         <property name="use_underline">True</property>
-                        <property name="image">image7</property>
-                        <property name="use_stock">False</property>
+                        <property name="use_stock">True</property>
                         <property name="accel_group">accel_group</property>
                         <property name="always_show_image">True</property>
                         <accelerator key="a" signal="activate" modifiers="GDK_CONTROL_MASK"/>
@@ -325,13 +365,11 @@
                     </child>
                     <child>
                       <object class="GtkImageMenuItem" id="instructions_menu_item">
-                        <property name="label">_Instructions</property>
+                        <property name="label" translatable="yes">Instructions</property>
                         <property name="visible">True</property>
                         <property name="can_focus">False</property>
-                        <property name="use_underline">True</property>
-                        <property name="image">image1</property>
+                        <property name="image">image2</property>
                         <property name="use_stock">False</property>
-                        <property name="accel_group">accel_group</property>
                         <property name="always_show_image">True</property>
                         <accelerator key="i" signal="activate" modifiers="GDK_CONTROL_MASK"/>
                         <signal name="activate" handler="on_instructions_menu_item_activate" swapped="no"/>
