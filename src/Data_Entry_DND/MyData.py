@@ -1101,7 +1101,7 @@ def _delete_added_row(liststore):
 
 def _move_row(model, path, position):
     '''
-    Copy data from source row to target row and then delete the source row - i.e., move the row
+    Copy liststore data from source row to target row and then delete the source row - i.e., move the row
     from source to destination. This is used both for drag and drop and to undo DnD. Path is 
     the source row, position the integer value of the row to move to.
     '''
