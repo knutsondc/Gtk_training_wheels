@@ -335,7 +335,11 @@ class MyData:
         needed here also because the user could enter an invalid Priority value from
         the keyboard.
         '''
-        if text.isdigit():
+        if (text.isdigit() and cell.column_number == 2):
+            '''
+            Check that this is the Priority Column before casting to an int because the
+            Project Column can take numeric values that must be in str format.
+            '''
             text = int(text)
             '''
             Now submit the new, updated data field to a function that checks it for
@@ -600,11 +604,12 @@ class MyData:
 #                model.insert_after(my_iter, row)
                 
         else:
-#            print("Inserted {0} after last row: {1}.".format(row, len(model)))
-#            print("I.e., move row {0} to row {1}.".format(old_path, len(model)))
-#            new_path = Gtk.TreePath.new_from_string(str(len(model)))
             new_path_n = len(model)
             revert_path = Gtk.TreePath.new_from_string(str(len(model)-1))
+            '''
+            The revert path must be one less than the length of the model to correct
+            for the earlier insertion of a new row.
+            '''
 #            print("New path = {0}".format(new_path_n))
             perform = (self.move_row, [model, old_path, new_path_n])
             revert = (self.move_row, [model, revert_path, old_path_n])
@@ -648,7 +653,7 @@ class MyData:
         listen for rows-reordered signals, because the ListStore will never be sorted,
         only the TreeModelSort.
         '''
-        print("Inserted row {0}.".format(path))
+#        print("Inserted row {0}.".format(path))
         if self.disk_file:
             '''
             Disk storage is done by shelving a list of lists - disk_file['store']. The path
@@ -663,7 +668,7 @@ class MyData:
             self.disk_file['store'].insert(int(path.to_string()), row)   
             
     def on_row_deleted(self, model, path):
-        print("Deleted row {0}.".format(path))
+ #       print("Deleted row {0}.".format(path))
         if self.disk_file:
             '''
             The one-to-one relationship between disk_file and ListStore allows us
@@ -673,7 +678,7 @@ class MyData:
             del self.disk_file['store'][int(path.to_string())]
             
     def on_row_changed(self, model, path, my_iter, data = None):
-        print("Changed row {0}.".format(path))
+#        print("Changed row {0}.".format(path))
         if self.disk_file:
             '''
             Rather than update only the field that's actually been edited, it's much
