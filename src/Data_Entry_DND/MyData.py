@@ -1,5 +1,5 @@
 from Model import AddRecordDialog   #@UnresolvedImport
-from History import Action, History #@UnresolvedImport
+from History import History         #@UnresolvedImport
 import os
 import shelve
 import json                         #Needed for encoding drag'n'drop data
@@ -157,6 +157,9 @@ class MyData:
         won't work without these two methods.
         '''
         self.history = History()
+        '''
+        Add a stack for storing actions that can be undone and redone.
+        '''
         
     def on_window_delete(self, widget, event): # pylint: disable-msg = w0613
         '''
@@ -256,24 +259,10 @@ class MyData:
             Next two functions are the "do" and "undo" for adding a record that get added to the 
             undo/redo history stack.
             '''
-            perform = (self.add_new_row, [self.CurrentRecordsStore, row])
-            revert = (self.delete_added_row, [self.CurrentRecordsStore])
+            perform = (self.CurrentRecordsStore.append, [row])
+            revert = (_delete_added_row, [self.CurrentRecordsStore])
             self.history.add(perform, revert)
 #            self.CurrentRecordsStore.append(row) # pylint: disable-msg = E1103
-
-    def add_new_row(self, liststore, row):
-        '''
-        The "do" function for adding a new record.
-        '''
-        liststore.append(row)
-        return
-    
-    def delete_added_row(self, liststore):
-        '''
-        The function to "undo" the addition of a new record.
-        '''
-        del liststore[len(liststore)-1]
-        return
     
     def validation_on_editing_started(self, cell, cell_editable, row):
         '''
@@ -389,10 +378,11 @@ class MyData:
 #            self.CurrentRecordsStore.set_value(self.CurrentRecordsStore.get_iter_from_string(path), cell.column_number, text)
             old_text = self.CurrentRecordsStore[path][cell.column_number]
             '''
-            The "do" and "undo" of the edit are pushed onto the undo/redo stack
+            The pre-edit text is saved to use in an "undo" and then the "do" and "undo" of the edit are pushed onto
+            the undo/redo stack
             '''
-            perform = (self.enter_edit, [self.CurrentRecordsStore, path, cell, text])
-            revert = (self.enter_edit, [self.CurrentRecordsStore, path, cell, old_text])
+            perform = (_enter_edit, [self.CurrentRecordsStore, path, cell, text])
+            revert = (_enter_edit, [self.CurrentRecordsStore, path, cell, old_text])
             self.history.add(perform, revert)
 #            self.CurrentRecordsStore[path][cell.column_number] = text
 #            self.window.reshow_with_initial_size()
@@ -410,12 +400,6 @@ class MyData:
         '''
         Return False so that this method called from idle_add() won't go on running forever.
         '''
-    def enter_edit(self, liststore, path, cell, text):
-        '''
-        Function for final entry of edits or undo or edits.
-        '''
-        liststore[path][cell.column_number] = text
-    
     def on_completed_toggled(self, cell, path):
         '''
         What to do if the user clicks a box in the "Completed?" column. Params sent
@@ -431,8 +415,10 @@ class MyData:
             '''
             path = self.CurrentRecordsStoreSorted.convert_path_to_child_path(Gtk.TreePath.new_from_string(path)).to_string()
         '''
+        The "do" and "undo" actions pushed onto the history stack here are the same:
         Reverse the value stored at the appropriate location in the ListStore. The
-        display updates automatically. Note the use of the column_number association. 
+        display updates automatically. Note the use of the column_number association
+        in the toggle_completed method. 
         '''
         perform = (self.toggle_completed, [cell, path])
         revert = (self.toggle_completed, [cell, path])
@@ -446,7 +432,15 @@ class MyData:
         self.CurrentRecordsStore[path][cell.column_number] = not self.CurrentRecordsStore[path][cell.column_number]
         
     def on_delete_button_clicked(self, widget): # pylint: disable-msg = W0613
+        
+        if not self.paths_selected:
+            '''
+            No records selected for deletion - do nothing.
+            '''
+            return
         '''
+        Two methods for performing multiple deletions have been tried here.
+        The first, which has now been commented out, goes as follows:
         Iterate over the list of rows (paths) in the TreeView the user has
         selected, collect a list of TreeRowReferences that will point to
         those rows even after other rows have been deleted from ListStore.
@@ -455,57 +449,33 @@ class MyData:
         record selected and then delete the corresponding record from the 
         ListStore. If the deletion is made from the sorted TreeView, the 
         "on_selection_changed" method translates those paths to paths to the
-        underlying unsorted ListStore. 
+        underlying unsorted ListStore.
         
-        Note that this could be done with iters on the ListStore - see
-        commented out code below.
+        Note that Gtk.TreePath.get_indices() returns a TUPLE of numbers
+        describing the path. Here this should be a single element tuple,
+        but we need a simple integer as an index, so we take the single
+        ELEMENT of the tuple as our index, not the tuple itself. 
+        
         '''
 #        for row in [Gtk.TreeRowReference.new(self.CurrentRecordsStore, path) for path in self.paths_selected]:
 #            if row.get_path():
 #                '''check if the RowReference still points to a valid Path '''
-##                    if self.disk_file:
-##                        del self.disk_file['store'][row.get_path().get_indices()[0]]
-        '''
-                The callbacks for the signals generated by row insertion and
-                deletion will cause the ListStore's changed state to be written
-                to disk and keep the disk file and ListStore consistent. Note
-                that the one-to-one relationship between the disk file version
-                of the ListStore and the ListStore itself and their simple two-
-                dimensional layout means we could use the TreePaths we derive
-                from the RowReferences, after converting them to simple integers,
-                as indices to the disk_file['store'] data structure that could
-                be used here to delete individual records from the disk file.
-                The TreePaths contain a str representation of the row number in
-                the ListStore of the records they point to. We would have to
-                modify the disk file before the ListStore because otherwise the
-                RowReferences would get out of sync with the disk file representation
-                of the ListStore - the one-to-one relationship would be broken --
-                and the program either would delete the wrong record or (more
-                likely) crash trying to delete a non-existent row of the
-                disk_file['store'] pointed to by an outdated TreePath.
-                    
-                Note that Gtk.TreePath.get_indices() returns a TUPLE of
-                numbers describing the path. Here this should be a single 
-                element tuple, but we need a simple integer as an index, so
-                we take the single ELEMENT of the tuple as our index, not 
-                the tuple itself.
-        '''
-##                        self.disk_file.sync()
-#                    
 #                del self.CurrentRecordsStore[row.get_path().get_indices()[0]]
-        if not self.paths_selected:
-            '''
-            No records selected for deletion - do nothing.
-            '''
-            return        
-# Delete method using iters on the ListStore:
+        
+        '''
+        The method currently used is similar, but uses iters instead of TreeRowReferences and makes
+        provision for undo/redo.
+        '''
         for record in [self.CurrentRecordsStore.get_iter(row) for row in self.paths_selected]: #pylint: disable-msg = E1103
             if record:
                 '''
                 For each record selected for deletion, first check to see if the iter pointing to
                 the record is still valid.
                 '''
-                row = self.CurrentRecordsStore.get_path(record)
+                row = int(self.CurrentRecordsStore.get_path(record).to_string())
+                '''
+                Get the row number of the record to be deleted for use in "undo"
+                '''
                 data = [self.CurrentRecordsStore.get_value(record, i) for i in range(self.CurrentRecordsStore.get_n_columns())]
                 '''
                 Save the data from each record to be deleted so the deletion can be reverted, if desired. 
@@ -514,7 +484,7 @@ class MyData:
                 '''
                 Perform the deletion
                 '''
-                revert = (self.CurrentRecordsStore.insert, [int(row.to_string()), data])
+                revert = (self.CurrentRecordsStore.insert, [row, data])
                 '''
                 Provide the function needed to undo the deletion.
                 '''
@@ -522,8 +492,25 @@ class MyData:
                 '''
                 Push the deletion and its reversion onto the undo/redo history stack.
                 '''
-#                self.CurrentRecordsStore.remove(record) #pylint: disable-msg=E1103
-    
+        '''
+        The callbacks for the signals generated by row insertion and
+        deletion will cause the ListStore's changed state to be written
+        to disk and keep the disk file and ListStore consistent. Note
+        that the one-to-one relationship between the disk file version
+        of the ListStore and the ListStore itself and their simple two-
+        dimensional layout means we could use the TreePaths we derive
+        from the RowReferences, after converting them to simple integers,
+        as indices to the disk_file['store'] data structure that could
+        be used here to delete individual records from the disk file.
+        The TreePaths contain a str representation of the row number in
+        the ListStore of the records they point to. We would have to
+        modify the disk file before the ListStore because otherwise the
+        RowReferences would get out of sync with the disk file representation
+        of the ListStore - the one-to-one relationship would be broken --
+        and the program either would delete the wrong record or (more
+        likely) crash trying to delete a non-existent row of the
+        disk_file['store'] pointed to by an outdated TreePath.
+        '''    
     def drag_data_get(self, tv, context, selection, target_id, time):
         model = tv.get_model()
         path = self.paths_selected[0]
@@ -585,8 +572,8 @@ class MyData:
                 doing the initial move; when reverting a move, old_path_n must be incremented
                 by one because the original move inserted a row into the model. 
                 '''
-                perform = (self.move_row,[model, old_path, target])
-                revert = (self.move_row, [model, target_path, old_path_n+1])
+                perform = (_move_row,[model, old_path, target])
+                revert = (_move_row, [model, target_path, old_path_n+1])
                 self.history.add(perform, revert)
 #                model.insert_before(my_iter, row)                
             else:
@@ -598,8 +585,8 @@ class MyData:
                 '''
 #                new_path = Gtk.TreePath.new_from_string(str(target+1))
 #                revert_path = Gtk.TreePath.new_from_string(str(target))
-                perform = (self.move_row,[model, old_path, target+1])
-                revert = (self.move_row, [model, target_path, old_path_n])
+                perform = (_move_row,[model, old_path, target+1])
+                revert = (_move_row, [model, target_path, old_path_n])
                 self.history.add(perform, revert)
 #                model.insert_after(my_iter, row)
                 
@@ -611,8 +598,8 @@ class MyData:
             for the earlier insertion of a new row.
             '''
 #            print("New path = {0}".format(new_path_n))
-            perform = (self.move_row, [model, old_path, new_path_n])
-            revert = (self.move_row, [model, revert_path, old_path_n])
+            perform = (_move_row, [model, old_path, new_path_n])
+            revert = (_move_row, [model, revert_path, old_path_n])
             self.history.add(perform, revert)
 #            model.append(row)
 
@@ -626,22 +613,6 @@ class MyData:
 #            '''
 #            context.finish(True, True, time)
         return   
-   
-    def move_row(self, model, path, position):
-        '''
-        Copy data from source row to target row and then delete the source row - i.e., move the row
-        from source to destination. This is used both for drag and drop and to undo DnD. Path is 
-        the source row, position the integer value of the row to move to.
-        '''
-        my_iter = model.get_iter(path)
-        ''' First copy the data from the source row '''
-        row = [model.get_value(my_iter, i) for i in range(model.get_n_columns())]
-#        print("Row to restore: {0}".format(position))
-        model.insert(position, row)
-        ''' Insert the data to the target (new) position '''
-#        print("Row to delete: {0}".format(model.get_path(my_iter)))
-        model.remove(my_iter)
-        ''' Finally, delete the source row to complete the move. '''
     
     def on_row_inserted(self, model, path, my_iter):
         '''
@@ -1115,6 +1086,34 @@ class MyData:
         Unblock this handler now that its work is done so that it can respond to new
         column rearrangements.
         '''
+def _enter_edit(liststore, path, cell, text):
+    '''
+    Function for final entry of edits or undo or edits.
+    '''
+    liststore[path][cell.column_number] = text
+
+def _delete_added_row(liststore):
+    '''
+    The function to "undo" the addition of a new record.
+    '''
+    del liststore[len(liststore)-1]
+    return
+
+def _move_row(model, path, position):
+    '''
+    Copy data from source row to target row and then delete the source row - i.e., move the row
+    from source to destination. This is used both for drag and drop and to undo DnD. Path is 
+    the source row, position the integer value of the row to move to.
+    '''
+    my_iter = model.get_iter(path)
+    ''' First copy the data from the source row '''
+    row = [model.get_value(my_iter, i) for i in range(model.get_n_columns())]
+#    print("Row to restore: {0}".format(position))
+    model.insert(position, row)
+    ''' Insert the data to the target (new) position '''
+#    print("Row to delete: {0}".format(model.get_path(my_iter)))
+    model.remove(my_iter)
+    ''' Finally, delete the source row to complete the move. '''
             
 def _get_column_by_title(title, tv):
     '''
