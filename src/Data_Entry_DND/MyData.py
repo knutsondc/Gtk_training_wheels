@@ -2,7 +2,7 @@ from Model import AddRecordDialog   #@UnresolvedImport
 from History import History         #@UnresolvedImport
 import os
 import shelve
-import json                         #Needed for encoding drag'n'drop data
+#import json                         #Needed for encoding drag'n'drop data
 from gi.repository import Gtk       #@UnresolvedImport pylint: disable-msg=E0611
 from gi.repository import Gdk       #@UnresolvedImport pylint: disable-msg=E0611
 from gi.repository import GdkPixbuf #@UnresolvedImport pylint: disable-msg=E0611
@@ -449,7 +449,13 @@ class MyData:
         record selected and then delete the corresponding record from the 
         ListStore. If the deletion is made from the sorted TreeView, the 
         "on_selection_changed" method translates those paths to paths to the
-        underlying unsorted ListStore.
+        underlying unsorted ListStore. Note that the _delete_existing_row()
+        function uses path numbers, not iters, for deleting rows because the
+        iters we get when this method first runs may no longer be valid when
+        later performing repeated undos and redos, but the path numbers will.
+        This forces use of the "stub" _delete_existing_row() function the
+        undo/redo stack expects to receive a function or method call and args,
+        but not a statement (such as del) and args.
         
         Note that Gtk.TreePath.get_indices() returns a TUPLE of numbers
         describing the path. Here this should be a single element tuple,
@@ -460,8 +466,12 @@ class MyData:
 #        for row in [Gtk.TreeRowReference.new(self.CurrentRecordsStore, path) for path in self.paths_selected]:
 #            if row.get_path():
 #                '''check if the RowReference still points to a valid Path '''
-#                del self.CurrentRecordsStore[row.get_path().get_indices()[0]]
-        
+#                row_number = row.get_path().get_indices()[0]
+#                record = self.CurrentRecordsStore.get_iter(row.get_path())
+#                data = [self.CurrentRecordsStore.get_value(record, i) for i in range(self.CurrentRecordsStore.get_n_columns())]
+#                perform = (_delete_existing_row, [self.CurrentRecordsStore, row_number])
+#                revert = (self.CurrentRecordsStore.insert, [row_number, data])
+#                self.history.add(perform, revert)
         '''
         The method currently used is similar, but uses iters instead of TreeRowReferences and makes
         provision for undo/redo.
@@ -480,7 +490,7 @@ class MyData:
                 '''
                 Save the data from each record to be deleted so the deletion can be reverted, if desired. 
                 '''
-                perform = (self.CurrentRecordsStore.remove, [record])
+                perform = (_delete_existing_row, [self.CurrentRecordsStore, row])
                 '''
                 Perform the deletion
                 '''
@@ -512,26 +522,29 @@ class MyData:
         disk_file['store'] pointed to by an outdated TreePath.
         '''    
     def drag_data_get(self, tv, context, selection, target_id, time):
-        model = tv.get_model()
+#        model = tv.get_model()
         path = self.paths_selected[0]
         '''
         Drag and drop affects only single rows, so we just take the single element
         of the instance variable that holds the contents of the treeview selection that
         we have set the multiple mode.
         '''
-        my_iter = model.get_iter(path)
-        row = [model.get_value(my_iter, i) for i in range(model.get_n_columns())]
-        row.append(int(path.to_string()))
+#        my_iter = model.get_iter(path)
+#        row = [model.get_value(my_iter, i) for i in range(model.get_n_columns())]
+#        row.append(int(path.to_string()))
         '''
-        First, construct a data object consisting of a treeview row and its path number
-        to be used as the drag and drop data.
+        First, construct a byte string data object containing the path number of the row
+        to be moved to use as the drag and drop data. The actual copying of the row to be
+        moved takes place in the drag_data_received() method - we need only communicate to
+        drag_data_received() the number of the row to be copied from the liststore.
         '''
-        data = bytes(json.dumps(row), "utf-8")
-        '''
-        Use JSON to convert the data for drag and drop from its heterogeneous original values
-        into a single string, which we encode as a Python UTF-8 byte string for use in a 
-        Gtk.SelectionData object.
-        '''
+#        data = bytes(json.dumps(row), "utf-8")
+        data = bytes(path.to_string(), "utf-8")
+#        '''
+#        Use JSON to convert the data for drag and drop from its heterogeneous original values
+#        into a single string, which we encode as a Python UTF-8 byte string for use in a 
+#        Gtk.SelectionData object.
+#        '''
         selection.set(selection.get_target(), 8, data)
         '''
         Finally, set the selection data object to the drag and drop data we've prepared.
@@ -539,16 +552,19 @@ class MyData:
               
     def drag_data_received(self, tv, context, x, y, selection,  info, time):
         model = tv.get_model()
-        row = json.loads(selection.get_data().decode("utf-8"))
+        path_string = selection.get_data().decode("utf-8")
+#        row = json.loads(selection.get_data().decode("utf-8"))
         '''
         The Gtk.SelectionData object we packed in drag_data_get gets decoded and unpacked into
         its original form here.
         '''
-        old_path_n = row.pop()
-        old_path = Gtk.TreePath.new_from_string(str(old_path_n))
+        old_path_number = int(path_string)
+        old_path = Gtk.TreePath.new_from_string(path_string)
+#        old_path_n = row.pop()
+#        old_path = Gtk.TreePath.new_from_string(str(old_path_n))
         '''
-        Strip off the path the treeview row to be moved originally had for later use in tracking
-        where drag and drop data came from and performing undo/redo.
+        Use the path the treeview row to be moved originally had for later use in tracking
+        where drag and drop data comes from and performing drag and drop and undo/redo.
         '''
         drop_info = tv.get_dest_row_at_pos(x, y)
         '''
@@ -561,7 +577,9 @@ class MyData:
             target = int(target_path.to_string())
             '''
             Now insert the data from the drag and drop according to where it was dropped and
-            keep track of changes as they're made so undo/redo becomes possible.
+            keep track of changes as they're made so undo/redo becomes possible. The moved row
+            isn't part of the DnD data, only the path number pointing to it. The move is made 
+            directly on the liststore by the move_row() method.
             '''
             if (position == Gtk.TreeViewDropPosition.BEFORE
                 or position == Gtk.TreeViewDropPosition.INTO_OR_BEFORE):                
@@ -573,7 +591,7 @@ class MyData:
                 by one because the original move inserted a row into the model. 
                 '''
                 perform = (_move_row,[model, old_path, target])
-                revert = (_move_row, [model, target_path, old_path_n+1])
+                revert = (_move_row, [model, target_path, old_path_number+1])
                 self.history.add(perform, revert)
 #                model.insert_before(my_iter, row)                
             else:
@@ -585,21 +603,21 @@ class MyData:
                 '''
 #                new_path = Gtk.TreePath.new_from_string(str(target+1))
 #                revert_path = Gtk.TreePath.new_from_string(str(target))
-                perform = (_move_row,[model, old_path, target+1])
-                revert = (_move_row, [model, target_path, old_path_n])
+                perform = (_move_row, [model, old_path, target+1])
+                revert = (_move_row, [model, target_path, old_path_number])
                 self.history.add(perform, revert)
 #                model.insert_after(my_iter, row)
                 
         else:
-            new_path_n = len(model)
+            new_path_number = len(model)
             revert_path = Gtk.TreePath.new_from_string(str(len(model)-1))
             '''
             The revert path must be one less than the length of the model to correct
             for the earlier insertion of a new row.
             '''
 #            print("New path = {0}".format(new_path_n))
-            perform = (_move_row, [model, old_path, new_path_n])
-            revert = (_move_row, [model, revert_path, old_path_n])
+            perform = (_move_row, [model, old_path, new_path_number])
+            revert = (_move_row, [model, revert_path, old_path_number])
             self.history.add(perform, revert)
 #            model.append(row)
 
@@ -695,6 +713,8 @@ class MyData:
         elif len(self.CurrentRecordsStore) > 0:
             self.save_unsaved(plural = False)
         self.CurrentRecordsStore.clear() #pylint: disable-msg=E1103
+        self.history = History()
+        '''Clear undo/redo history from prior operations '''
         self.window.reshow_with_initial_size()
         self.window.set_title("Unsaved Data File")            
     
@@ -752,6 +772,8 @@ class MyData:
                 GObject.GObject.handler_unblock_by_func(self.CurrentRecordsStore, self.on_row_inserted)
                 '''Change the window title to reflect the file we're now using.'''
                 self.window.set_title(os.path.basename(dialog.get_filename()))
+                self.history = History()
+                '''Clear undo/redo stack from prior operations '''
                 self.window.reshow_with_initial_size()
             except Exception as inst:
                 msg = Gtk.MessageDialog(None, Gtk.DialogFlags.MODAL,
@@ -1097,6 +1119,10 @@ def _delete_added_row(liststore):
     The function to "undo" the addition of a new record.
     '''
     del liststore[len(liststore)-1]
+    return
+
+def _delete_existing_row(liststore, row):
+    del liststore[row]
     return
 
 def _move_row(model, path, position):
