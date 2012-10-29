@@ -509,8 +509,7 @@ class MyData:
         Drag and drop affects only single rows, so we just take the single element
         of the instance variable that holds the contents of the treeview selection that
         we have set the multiple mode.
-        '''
-        '''
+        
         First, construct a byte string data object containing the path number of the row
         to be moved to use as the drag and drop data. The actual copying of the row to be
         moved takes place in the drag_data_received() method - we need only communicate to
@@ -520,8 +519,7 @@ class MyData:
         selection.set(selection.get_target(), 8, data)
         '''
         Finally, set the selection data object to the drag and drop data we've prepared.
-        '''
-              
+        '''             
     def drag_data_received(self, tv, context, x, y, selection,  info, time):
         model = tv.get_model()
         path_string = selection.get_data().decode("utf-8")
@@ -554,33 +552,40 @@ class MyData:
                 or position == Gtk.TreeViewDropPosition.INTO_OR_BEFORE):                
                 '''
                 A "before" drop means the new path is always equal to the target value when
-                doing the initial move; when reverting a move, old_path_n must be incremented
-                by one because the original move inserted a row into the model. 
-                '''
+                doing the initial move. The ordinal position of the row to be moved and the
+                target row in a reversion must be adjusted depending upon which direction the
+                original move was in the treeview because of the effect of temporarily inserting
+                an additional row and then deleting it.  
+                '''               
                 perform = (_move_row,[model, old_path, target])
-                revert = (_move_row, [model, target_path, old_path_number+1])
-                self.history.add(perform, revert)
+                if(old_path_number < target):
+                    revert_path = Gtk.TreePath.new_from_string(str(target-1)) 
+                    revert = (_move_row, [model, revert_path, old_path_number])                     
+                else:
+                    revert_path = Gtk.TreePath.new_from_string(str(target))                    
+                    revert = (_move_row, [model, revert_path, old_path_number+1])               
             else:
                 '''
                 An "after" drop means the position of the new path must be one greater than the
                 target for the initial move; the path for a reversion must back out that increment.
-                '''
+                '''                
                 perform = (_move_row, [model, old_path, target+1])
-                revert = (_move_row, [model, target_path, old_path_number])
-                self.history.add(perform, revert)
-#                model.insert_after(my_iter, row)
-                
+                if(old_path_number < target):
+                    revert_path = Gtk.TreePath.new_from_string(str(target))
+                    revert = (_move_row, [model, revert_path, old_path_number])                  
+                else:
+                    revert_path = Gtk.TreePath.new_from_string(str(target+1))
+                    revert = (_move_row, [model, revert_path, old_path_number+1])                               
         else:
             target = len(model)
             target_path = Gtk.TreePath.new_from_string(str(len(model)-1))
             '''
             The revert path must be one less than the length of the model to correct
             for the earlier insertion of a new row.
-            '''
+            '''           
             perform = (_move_row, [model, old_path, target])
             revert = (_move_row, [model, target_path, old_path_number])
-            self.history.add(perform, revert)
-
+        self.history.add(perform, revert)
 #    Lines calling upon the DragContext to delete a moved row are commented out
 #    because we delete a moved row by hand to more easily accommodate undo/redo
 
