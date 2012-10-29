@@ -256,7 +256,7 @@ class MyData:
             undo/redo history stack.
             '''
             perform = (self.CurrentRecordsStore.append, [row])
-            revert = (_delete_added_row, [self.CurrentRecordsStore])
+            revert = (_delete_row, [self.CurrentRecordsStore, len(self.CurrentRecordsStore)-1])
             self.history.add(perform, revert)
     
     def validation_on_editing_started(self, cell, cell_editable, row):
@@ -451,7 +451,7 @@ class MyData:
 #                row_number = row.get_path().get_indices()[0]
 #                record = self.CurrentRecordsStore.get_iter(row.get_path())
 #                data = [self.CurrentRecordsStore.get_value(record, i) for i in range(self.CurrentRecordsStore.get_n_columns())]
-#                perform = (_delete_existing_row, [self.CurrentRecordsStore, row_number])
+#                perform = (_delete_row, [self.CurrentRecordsStore, row_number])
 #                revert = (self.CurrentRecordsStore.insert, [row_number, data])
 #                self.history.add(perform, revert)
         '''
@@ -464,7 +464,7 @@ class MyData:
                 For each record selected for deletion, first check to see if the iter pointing to
                 the record is still valid.
                 '''
-                row = int(self.CurrentRecordsStore.get_path(record).to_string())
+                row_number = int(self.CurrentRecordsStore.get_path(record).to_string())
                 '''
                 Get the row number of the record to be deleted for use in "undo"
                 '''
@@ -472,11 +472,11 @@ class MyData:
                 '''
                 Save the data from each record to be deleted so the deletion can be reverted, if desired. 
                 '''
-                perform = (_delete_existing_row, [self.CurrentRecordsStore, row])
+                perform = (_delete_row, [self.CurrentRecordsStore, row_number])
                 '''
                 Perform the deletion
                 '''
-                revert = (self.CurrentRecordsStore.insert, [row, data])
+                revert = (self.CurrentRecordsStore.insert, [row_number, data])
                 '''
                 Provide the function needed to undo the deletion.
                 '''
@@ -571,14 +571,14 @@ class MyData:
 #                model.insert_after(my_iter, row)
                 
         else:
-            new_path_number = len(model)
-            revert_path = Gtk.TreePath.new_from_string(str(len(model)-1))
+            target = len(model)
+            target_path = Gtk.TreePath.new_from_string(str(len(model)-1))
             '''
             The revert path must be one less than the length of the model to correct
             for the earlier insertion of a new row.
             '''
-            perform = (_move_row, [model, old_path, new_path_number])
-            revert = (_move_row, [model, revert_path, old_path_number])
+            perform = (_move_row, [model, old_path, target])
+            revert = (_move_row, [model, target_path, old_path_number])
             self.history.add(perform, revert)
 
 #    Lines calling upon the DragContext to delete a moved row are commented out
@@ -1077,23 +1077,18 @@ def _toggle_cell(liststore, cell, path):
     '''
     liststore[path][cell.column_number] = not liststore[path][cell.column_number]
 
-
-def _delete_added_row(liststore):
+def _delete_row(liststore, row):
     '''
-    The function to "undo" the addition of a new record.
+    The function to "do" the deletion of a record.
     '''
-    del liststore[len(liststore)-1]
-    return
-
-def _delete_existing_row(liststore, row):
     del liststore[row]
     return
 
 def _move_row(model, path, position):
     '''
-    Copy liststore data from source row to target row and then delete the source row - i.e., move the row
-    from source to destination. This is used both for drag and drop and to undo DnD. Path is 
-    the source row, position the integer value of the row to move to.
+    Copy liststore data from source row (path arg) to target row position (position arg) and
+    then delete the source row - i.e., move the row from source to destination. This is used
+    both for drag and drop and to undo DnD.
     '''
     my_iter = model.get_iter(path)
     ''' First copy the data from the source row '''
