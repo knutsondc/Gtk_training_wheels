@@ -224,15 +224,15 @@ class MyData:
             the user supplied as the default values and the cursor set in the first data
             entry field that caused the error check to fail.
             '''
-        elif self.ErrorCheck(0, record['project']):
+        elif _error_check(0, record['project']):
             record['focus'] = 'project'
             self.on_add_button_clicked(widget, record)
             
-        elif self.ErrorCheck(1, record['context']):
+        elif _error_check(1, record['context']):
             record['focus'] = 'context'
             self.on_add_button_clicked(widget, record)
         
-        elif self.ErrorCheck(2, record['priority']):
+        elif _error_check(2, record['priority']):
             record['focus'] = 'priority'
             self.on_add_button_clicked(widget, record)            
         else:
@@ -327,7 +327,7 @@ class MyData:
             column object to which each was attached was associated with that
             CellRenderer. We use that association now to find the column we need.
             '''
-        if self.ErrorCheck(cell.column_number, text):
+        if _error_check(cell.column_number, text):
             self.invalid_text_for_retry = text
             self.validate_retry = True
             GObject.idle_add(self.restart_edit, cell.tv, path, cell.column_obj)
@@ -915,62 +915,7 @@ class MyData:
         msg.run()
         msg.hide()
         
-    def ErrorCheck(self, col_num, text):
-        '''
-        Check proposed input for invalid data. Return True if there's an error,
-        False if everything's good.
-        '''
-        if col_num == 0:
-            '''If column calls for a string, it cannot be empty '''
-            if not text:
-                msg = Gtk.MessageDialog(None, Gtk.DialogFlags.MODAL,
-                                Gtk.MessageType.ERROR, Gtk.ButtonsType.OK,
-                                "Invalid or incomplete Project entry.\n"  + \
-                                "Project Field cannot be blank.")
-                msg.set_title("Project Entry Error!")
-                msg.run()
-                msg.destroy()
-                return True
-            else:
-                return False
-        elif col_num == 1:
-            if (len(text) < 2 or not text.startswith('@')):
-                msg = Gtk.MessageDialog(None, Gtk.DialogFlags.MODAL,
-                                Gtk.MessageType.ERROR, Gtk.ButtonsType.OK,
-                                "Invalid or incomplete Context entry.\n" + \
-                                 "Entry must be at least two characters starting with @")
-                msg.set_title("Context Entry Error!")
-                msg.run()
-                msg.destroy()
-                return True
-            else:
-                return False
-            
-        elif col_num == 2:            
-            '''
-            If column calls for a number, it must be between 1 and 4. The
-            Spinbutton and its adjustment should guarantee compliance, but
-            we check here because the user could enter an invalid value from
-            the keyboard.
-            '''
-            if ((not isinstance(text, int)) or ((text < 1) or (text > 4))):
-                msg = Gtk.MessageDialog(None, Gtk.DialogFlags.MODAL,
-                    Gtk.MessageType.ERROR, Gtk.ButtonsType.OK,
-                    "Priority value must be an integer between 1 and 4.")
-                msg.set_title("Priority Entry Error!")
-                msg.run()
-                msg.destroy()
-                return True
-            else:
-                return False
-        else:
-            msg = Gtk.MessageDialog(None, Gtk.DialogFlags.MODAL,
-                                Gtk.MessageType.ERROR, Gtk.ButtonsType.OK,
-                                "Unknown Data Entry Error.")
-            msg.set_title("Unknown Data Entry Error!")
-            msg.run()
-            msg.destroy()
-            return True
+    
         
     def save_unsaved(self, plural):
         '''
@@ -1055,6 +1000,63 @@ class MyData:
         Unblock this handler now that its work is done so that it can respond to new
         column rearrangements.
         '''
+def _error_check(col_num, text):
+        '''
+        Check proposed input for invalid data. Return True if there's an error,
+        False if everything's good.
+        '''
+        if col_num == 0:
+            '''If column calls for a string, it cannot be empty '''
+            if not text:
+                msg = Gtk.MessageDialog(None, Gtk.DialogFlags.MODAL,
+                                Gtk.MessageType.ERROR, Gtk.ButtonsType.OK,
+                                "Invalid or incomplete Project entry.\n"  + \
+                                "Project Field cannot be blank.")
+                msg.set_title("Project Entry Error!")
+                msg.run()
+                msg.destroy()
+                return True
+            else:
+                return False
+        elif col_num == 1:
+            if (len(text) < 2 or not text.startswith('@')):
+                msg = Gtk.MessageDialog(None, Gtk.DialogFlags.MODAL,
+                                Gtk.MessageType.ERROR, Gtk.ButtonsType.OK,
+                                "Invalid or incomplete Context entry.\n" + \
+                                 "Entry must be at least two characters starting with @")
+                msg.set_title("Context Entry Error!")
+                msg.run()
+                msg.destroy()
+                return True
+            else:
+                return False
+            
+        elif col_num == 2:            
+            '''
+            If column calls for a number, it must be between 1 and 4. The
+            Spinbutton and its adjustment should guarantee compliance, but
+            we check here because the user could enter an invalid value from
+            the keyboard.
+            '''
+            if ((not isinstance(text, int)) or ((text < 1) or (text > 4))):
+                msg = Gtk.MessageDialog(None, Gtk.DialogFlags.MODAL,
+                    Gtk.MessageType.ERROR, Gtk.ButtonsType.OK,
+                    "Priority value must be an integer between 1 and 4.")
+                msg.set_title("Priority Entry Error!")
+                msg.run()
+                msg.destroy()
+                return True
+            else:
+                return False
+        else:
+            msg = Gtk.MessageDialog(None, Gtk.DialogFlags.MODAL,
+                                Gtk.MessageType.ERROR, Gtk.ButtonsType.OK,
+                                "Unknown Data Entry Error.")
+            msg.set_title("Unknown Data Entry Error!")
+            msg.run()
+            msg.destroy()
+            return True
+
 def _enter_edit(liststore, path, cell, text):
     '''
     Function for final entry of edits or undo or edits to specific cells.
