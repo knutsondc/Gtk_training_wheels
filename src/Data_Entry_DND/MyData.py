@@ -928,11 +928,12 @@ class MyData:
         else:
             txt1 = "You have an unsaved data record."
             txt2 = "Do you wish to save it?"
-        msg = Gtk.MessageDialog(self.window, Gtk.DialogFlags.MODAL, 
+        msg = Gtk.MessageDialog(None, Gtk.DialogFlags.MODAL, 
                                 Gtk.MessageType.QUESTION, 
                                 Gtk.ButtonsType.OK_CANCEL, 
                                 txt1)
         msg.format_secondary_text(txt2)
+        msg.set_title("Save Unsaved Data?")
         response = msg.run()
         if response == Gtk.ResponseType.OK:
             '''
