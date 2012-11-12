@@ -46,24 +46,36 @@ class MyData:
         project_renderer.column_obj = project_column
         project_renderer.column_number = 0
         project_renderer.tv = self.treeview_dnd
+        project_column.tv = self.treeview_dnd
         project_column.set_cell_data_func(project_renderer, _format_func, func_data = None)
+        project_column.connect("notify::width", self.on_column_width_changed)
+        '''
+        Listen to notifications of column width changes to synchronize appearance of
+        sorted and unsorted views.
+        '''
         context_column = builder.get_object("ContextColumn")
         context_renderer = builder.get_object("ContextCellRendererText")
         context_renderer.column_obj = context_column
         context_renderer.column_number = 1
         context_renderer.tv = self.treeview_dnd
         context_column.set_cell_data_func(context_renderer, _format_func, func_data = None)
+        context_column.tv = self.treeview_dnd
+        context_column.connect("notify::width", self.on_column_width_changed)
         priority_column = builder.get_object("PriorityColumn")
         priority_renderer = builder.get_object("PriorityCellRendererSpin")
         priority_renderer.column_obj = priority_column
         priority_renderer.column_number = 2
         priority_renderer.tv = self.treeview_dnd
         priority_column.set_cell_data_func(priority_renderer, _format_func, func_data = None)
+        priority_column.tv = self.treeview_dnd
+        priority_column.connect("notify::width", self.on_column_width_changed)      
         completed_column = builder.get_object("CompletedColumn")
         completed_renderer = builder.get_object("CompletedCellRendererToggle")
         completed_renderer.column_obj = completed_column
         completed_renderer.column_number = 3
         completed_renderer.tv = self.treeview_dnd
+        completed_column.tv = self.treeview_dnd
+        completed_column.connect("notify::width", self.on_column_width_changed)
         '''
         The following item later holds references to the data records the user has 
         selected in the treeview and, by extension, the Gtk.ListStore from which
@@ -93,23 +105,31 @@ class MyData:
         project_sorted_renderer.column_number = 0
         project_sorted_renderer.tv = self.treeview_sort
         project_column_sorted.set_cell_data_func(project_sorted_renderer, _format_func, func_data = None)
+        project_column_sorted.tv = self.treeview_sort
+        project_column_sorted.connect("notify::width", self.on_column_width_changed)
         context_column_sorted = builder.get_object("ContextColumnSorted")
         context_sorted_renderer = builder.get_object("ContextSortedCellRendererText")
         context_sorted_renderer.column_obj = context_column_sorted
         context_sorted_renderer.column_number = 1
         context_sorted_renderer.tv = self.treeview_sort
         context_column_sorted.set_cell_data_func(context_sorted_renderer, _format_func, func_data = None)
+        context_column_sorted.tv = self.treeview_sort
+        context_column_sorted.connect("notify::width", self.on_column_width_changed)
         priority_column_sorted = builder.get_object("PriorityColumnSorted")
         priority_sorted_renderer = builder.get_object("PrioritySortedCellRendererSpin")
         priority_sorted_renderer.column_obj = priority_column_sorted
         priority_sorted_renderer.column_number = 2
         priority_sorted_renderer.tv = self.treeview_sort
         priority_column_sorted.set_cell_data_func(priority_sorted_renderer, _format_func, func_data = None)
+        priority_column_sorted.tv = self.treeview_sort
+        priority_column_sorted.connect("notify::width", self.on_column_width_changed)
         completed_column_sorted = builder.get_object("CompletedColumnSorted")
         completed_sorted_renderer = builder.get_object("CompletedSortedCellRendererToggle")
         completed_sorted_renderer.column_obj = completed_column_sorted
         completed_sorted_renderer.column_number = 3
         completed_sorted_renderer.tv = self.treeview_sort
+        completed_column_sorted.tv = self.treeview_sort
+        completed_column_sorted.connect("notify::width", self.on_column_width_changed)
         self.sorted_selection = builder.get_object("treeview_sort_selection")
         self.CurrentRecordsStoreSorted = builder.get_object("CurrentRecordsStoreSorted")
         
@@ -1001,6 +1021,36 @@ class MyData:
         Unblock this handler now that its work is done so that it can respond to new
         column rearrangements.
         '''
+    def on_column_width_changed(self, col, width):
+        '''
+        Keep widths of columns the same in both sorted and unsorted views.
+        '''        
+        if col.tv == self.treeview_dnd:
+            '''
+            First determine which view had a column width change.
+            '''
+            other_tv = self.treeview_sort
+        else:
+            other_tv = self.treeview_dnd
+        other_col = _get_column_by_title(col.get_title(), other_tv)
+        '''
+        Find the same column in the other view as the one that's had a 
+        width change.
+        '''
+        other_col.set_sizing(Gtk.TreeViewColumnSizing.FIXED)
+        other_col.set_fixed_width(col.get_width())
+        '''
+        Change sizing of "slave" column to fixed so we can set it to the
+        width of the column that had its width changed by the user.
+        '''
+        other_col.set_resizable(True)
+        '''
+        Now that we've set the "slave" column's width to match, make sure
+        the slave's again resizable because that may be the one the user
+        wishes to change width on the next time.
+        '''
+        return
+        
 def _error_check(col_num, text):
         '''
         Check proposed input for invalid data. Return True if there's an error,

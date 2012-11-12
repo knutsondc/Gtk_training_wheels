@@ -51,6 +51,7 @@
       <object class="GtkTreeViewColumn" id="ProjectColumnSorted">
         <property name="resizable">True</property>
         <property name="title" translatable="yes">Project</property>
+        <property name="expand">True</property>
         <property name="clickable">True</property>
         <property name="reorderable">True</property>
         <property name="sort_indicator">True</property>
@@ -84,6 +85,7 @@
       <object class="GtkTreeViewColumn" id="ContextColumnSorted">
         <property name="resizable">True</property>
         <property name="title" translatable="yes">Context</property>
+        <property name="expand">True</property>
         <property name="clickable">True</property>
         <property name="reorderable">True</property>
         <property name="sort_indicator">True</property>
@@ -117,6 +119,8 @@
     </child>
     <child>
       <object class="GtkTreeViewColumn" id="PriorityColumnSorted">
+        <property name="sizing">fixed</property>
+        <property name="fixed_width">85</property>
         <property name="title" translatable="yes">Priority</property>
         <property name="clickable">True</property>
         <property name="alignment">0.5</property>
@@ -129,7 +133,7 @@
             <property name="cell_background_rgba">rgba(0,0,0,0)</property>
             <property name="xpad">2</property>
             <property name="ypad">2</property>
-            <property name="xalign">0</property>
+            <property name="xalign">0.50999999046325684</property>
             <property name="alignment">right</property>
             <property name="background_gdk">#000000000000</property>
             <property name="editable">True</property>
@@ -157,6 +161,9 @@
     </child>
     <child>
       <object class="GtkTreeViewColumn" id="CompletedColumnSorted">
+        <property name="resizable">True</property>
+        <property name="sizing">autosize</property>
+        <property name="fixed_width">115</property>
         <property name="title" translatable="yes">Completed?</property>
         <property name="clickable">True</property>
         <property name="alignment">0.5</property>
@@ -212,6 +219,7 @@
             <child>
               <object class="GtkImageMenuItem" id="file_menu_item">
                 <property name="label">gtk-file</property>
+                <property name="use_action_appearance">False</property>
                 <property name="visible">True</property>
                 <property name="can_focus">False</property>
                 <property name="use_underline">True</property>
@@ -227,6 +235,7 @@
                     <child>
                       <object class="GtkImageMenuItem" id="new_menu_item">
                         <property name="label">gtk-new</property>
+                        <property name="use_action_appearance">False</property>
                         <property name="visible">True</property>
                         <property name="can_focus">False</property>
                         <property name="use_underline">True</property>
@@ -240,6 +249,7 @@
                     <child>
                       <object class="GtkImageMenuItem" id="open_menu_item">
                         <property name="label">gtk-open</property>
+                        <property name="use_action_appearance">False</property>
                         <property name="visible">True</property>
                         <property name="can_focus">False</property>
                         <property name="use_underline">True</property>
@@ -253,6 +263,7 @@
                     <child>
                       <object class="GtkImageMenuItem" id="save_menu_item">
                         <property name="label">gtk-save</property>
+                        <property name="use_action_appearance">False</property>
                         <property name="visible">True</property>
                         <property name="can_focus">False</property>
                         <property name="use_underline">True</property>
@@ -266,6 +277,7 @@
                     <child>
                       <object class="GtkImageMenuItem" id="save_as_menu_item">
                         <property name="label">gtk-save-as</property>
+                        <property name="use_action_appearance">False</property>
                         <property name="visible">True</property>
                         <property name="can_focus">False</property>
                         <property name="use_underline">True</property>
@@ -285,6 +297,7 @@
                     <child>
                       <object class="GtkImageMenuItem" id="quit_menu_item">
                         <property name="label">gtk-quit</property>
+                        <property name="use_action_appearance">False</property>
                         <property name="visible">True</property>
                         <property name="can_focus">False</property>
                         <property name="use_underline">True</property>
@@ -302,6 +315,7 @@
             <child>
               <object class="GtkImageMenuItem" id="edit_menu_item">
                 <property name="label">gtk-edit</property>
+                <property name="use_action_appearance">False</property>
                 <property name="visible">True</property>
                 <property name="can_focus">False</property>
                 <property name="use_underline">True</property>
@@ -317,6 +331,7 @@
                     <child>
                       <object class="GtkImageMenuItem" id="undo_menu_item">
                         <property name="label">gtk-undo</property>
+                        <property name="use_action_appearance">False</property>
                         <property name="visible">True</property>
                         <property name="can_focus">False</property>
                         <property name="use_underline">True</property>
@@ -330,6 +345,7 @@
                     <child>
                       <object class="GtkImageMenuItem" id="redo_menu_item">
                         <property name="label">gtk-redo</property>
+                        <property name="use_action_appearance">False</property>
                         <property name="visible">True</property>
                         <property name="can_focus">False</property>
                         <property name="use_underline">True</property>
@@ -347,6 +363,7 @@
             <child>
               <object class="GtkImageMenuItem" id="help_menu_item">
                 <property name="label">gtk-help</property>
+                <property name="use_action_appearance">False</property>
                 <property name="visible">True</property>
                 <property name="can_focus">False</property>
                 <property name="use_underline">True</property>
@@ -362,6 +379,7 @@
                     <child>
                       <object class="GtkImageMenuItem" id="about_menu_item">
                         <property name="label">gtk-about</property>
+                        <property name="use_action_appearance">False</property>
                         <property name="visible">True</property>
                         <property name="can_focus">False</property>
                         <property name="use_underline">True</property>
@@ -375,6 +393,7 @@
                     <child>
                       <object class="GtkImageMenuItem" id="instructions_menu_item">
                         <property name="label" translatable="yes">Instructions</property>
+                        <property name="use_action_appearance">False</property>
                         <property name="visible">True</property>
                         <property name="can_focus">False</property>
                         <property name="image">image2</property>
@@ -475,15 +494,18 @@
                 </child>
                 <child>
                   <object class="GtkTreeViewColumn" id="PriorityColumn">
+                    <property name="sizing">fixed</property>
+                    <property name="fixed_width">85</property>
                     <property name="title" translatable="yes">Priority</property>
                     <property name="alignment">0.5</property>
                     <property name="reorderable">True</property>
                     <child>
                       <object class="GtkCellRendererSpin" id="PriorityCellRendererSpin">
-                        <property name="xalign">0.37000000476837158</property>
+                        <property name="xalign">0.50999999046325684</property>
                         <property name="alignment">right</property>
                         <property name="background_gdk">#ffffffffffff</property>
                         <property name="editable">True</property>
+                        <property name="family">Sans</property>
                         <property name="font">Normal</property>
                         <property name="foreground_gdk">#000000000000</property>
                         <property name="single_paragraph_mode">True</property>
@@ -504,6 +526,9 @@
                 </child>
                 <child>
                   <object class="GtkTreeViewColumn" id="CompletedColumn">
+                    <property name="resizable">True</property>
+                    <property name="sizing">autosize</property>
+                    <property name="fixed_width">115</property>
                     <property name="title" translatable="yes">Completed?</property>
                     <property name="alignment">0.5</property>
                     <property name="reorderable">True</property>
@@ -535,11 +560,13 @@
             <child>
               <object class="GtkButton" id="add_record_button">
                 <property name="label" translatable="yes">_Add Record</property>
+                <property name="use_action_appearance">False</property>
                 <property name="visible">True</property>
                 <property name="can_focus">True</property>
                 <property name="can_default">True</property>
                 <property name="has_default">True</property>
                 <property name="receives_default">True</property>
+                <property name="use_action_appearance">False</property>
                 <property name="use_underline">True</property>
                 <signal name="clicked" handler="on_add_button_clicked" swapped="no"/>
               </object>
@@ -552,10 +579,12 @@
             <child>
               <object class="GtkToggleButton" id="dnd_toggle_button">
                 <property name="label" translatable="yes">D_rag and Drop?</property>
+                <property name="use_action_appearance">False</property>
                 <property name="visible">True</property>
                 <property name="can_focus">True</property>
                 <property name="receives_default">True</property>
                 <property name="border_width">1</property>
+                <property name="use_action_appearance">False</property>
                 <property name="use_underline">True</property>
                 <property name="active">True</property>
                 <signal name="toggled" handler="on_dnd_toggle_button_toggled" swapped="no"/>
@@ -570,9 +599,11 @@
             <child>
               <object class="GtkButton" id="delete_record_button">
                 <property name="label" translatable="yes">_Delete Record(s)</property>
+                <property name="use_action_appearance">False</property>
                 <property name="visible">True</property>
                 <property name="can_focus">True</property>
                 <property name="receives_default">True</property>
+                <property name="use_action_appearance">False</property>
                 <property name="use_underline">True</property>
                 <signal name="clicked" handler="on_delete_button_clicked" swapped="no"/>
               </object>
