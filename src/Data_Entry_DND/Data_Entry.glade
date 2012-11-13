@@ -161,8 +161,7 @@
     </child>
     <child>
       <object class="GtkTreeViewColumn" id="CompletedColumnSorted">
-        <property name="resizable">True</property>
-        <property name="sizing">autosize</property>
+        <property name="sizing">fixed</property>
         <property name="fixed_width">115</property>
         <property name="title" translatable="yes">Completed?</property>
         <property name="clickable">True</property>
@@ -526,8 +525,7 @@
                 </child>
                 <child>
                   <object class="GtkTreeViewColumn" id="CompletedColumn">
-                    <property name="resizable">True</property>
-                    <property name="sizing">autosize</property>
+                    <property name="sizing">fixed</property>
                     <property name="fixed_width">115</property>
                     <property name="title" translatable="yes">Completed?</property>
                     <property name="alignment">0.5</property>
