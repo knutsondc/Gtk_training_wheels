@@ -163,6 +163,7 @@
       <object class="GtkTreeViewColumn" id="CompletedColumnSorted">
         <property name="sizing">fixed</property>
         <property name="fixed_width">115</property>
+        <property name="min_width">115</property>
         <property name="title" translatable="yes">Completed?</property>
         <property name="clickable">True</property>
         <property name="alignment">0.5</property>
@@ -527,6 +528,7 @@
                   <object class="GtkTreeViewColumn" id="CompletedColumn">
                     <property name="sizing">fixed</property>
                     <property name="fixed_width">115</property>
+                    <property name="min_width">115</property>
                     <property name="title" translatable="yes">Completed?</property>
                     <property name="alignment">0.5</property>
                     <property name="reorderable">True</property>

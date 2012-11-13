@@ -1037,22 +1037,19 @@ class MyData:
         Find the same column in the other view as the one that's had a 
         width change.
         '''
-        old_sizing = other_col.get_sizing()
-        '''
-        Save the existing sizing property of the "slave" column before
-        changing it to FIXED
-        '''
         other_col.set_sizing(Gtk.TreeViewColumnSizing.FIXED)
         other_col.set_fixed_width(col.get_width())
         '''
         Change sizing of "slave" column to FIXED so we can set it to the
         width of the column that had its width changed by the user.
         '''
-        other_col.set_sizing(old_sizing)
-#        other_col.set_resizable(True)
+#        if other_col.get_title() == ("Project" or "Context"):
+#            other_col.set_sizing(Gtk.TreeViewColumnSizing.GROW_ONLY)
+        other_col.set_resizable(True)
         '''
-        Now that we've set the "slave" column's width to match, restore the
-        preexisting sizing behavior of the slave column.
+        If a column-width change and switch in views makes the last column
+        in the view too wide, it must be set to resizable so the user can 
+        fix it. This is a kludgy solution that should be improved.
         '''
         return
         
