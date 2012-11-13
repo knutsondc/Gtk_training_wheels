@@ -1037,14 +1037,23 @@ class MyData:
         Find the same column in the other view as the one that's had a 
         width change.
         '''
+        GObject.GObject.handler_block_by_func(col, self.on_column_width_changed)
+        GObject.GObject.handler_block_by_func(other_col, self.on_column_width_changed)
+        '''
+        Disable this method until we're done processing this width change so that
+        the change in the "slave" column doesn't itself invoke this method and make
+        us chase our tails.
+        '''
+
         other_col.set_sizing(Gtk.TreeViewColumnSizing.FIXED)
         other_col.set_fixed_width(col.get_width())
         '''
         Change sizing of "slave" column to FIXED so we can set it to the
         width of the column that had its width changed by the user.
         '''
-#        if other_col.get_title() == ("Project" or "Context"):
-#            other_col.set_sizing(Gtk.TreeViewColumnSizing.GROW_ONLY)
+        GObject.GObject.handler_unblock_by_func(col, self.on_column_width_changed)
+        GObject.GObject.handler_unblock_by_func(other_col, self.on_column_width_changed)
+
         other_col.set_resizable(True)
         '''
         If a column-width change and switch in views makes the last column
