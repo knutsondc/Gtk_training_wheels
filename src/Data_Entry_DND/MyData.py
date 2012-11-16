@@ -658,15 +658,11 @@ class MyData:
         instance variable is required.
         '''
         model, paths_selected = selection.get_selected_rows()
-        if model == self.CurrentRecordsStoreSorted:
-            '''
-            Paths pointing to entries in the sorted tv need to be converted to paths
-            pointing to the "real," unsorted data store before they can be acted upon.
-            '''
-            self.paths_selected = [self.CurrentRecordsStoreSorted.convert_path_to_child_path(path) for path in paths_selected]
-        else:
-            self.paths_selected = paths_selected
-                
+        self.paths_selected = [self.CurrentRecordsStoreSorted.convert_path_to_child_path(path) for path in paths_selected] if model == self.CurrentRecordsStoreSorted else paths_selected
+        '''
+        Paths pointing to entries in the sorted tv need to be converted to paths
+        pointing to the "real," unsorted data store before they can be acted upon.
+        '''       
     def on_new_menu_item_activate(self, widget):       
         '''
         Go back to where we were when the program first opened: close and open
@@ -988,13 +984,10 @@ class MyData:
         in the same order when the user changes column order in either
         treeview.
         '''
-        if tv == self.treeview_dnd:
-            '''
-            First detect which view got its columns rearranged.
-            '''
-            other_tv = self.treeview_sort
-        else:
-            other_tv = self.treeview_dnd
+        other_tv = self.treeview_sort if tv == self.treeview_dnd else self.treeview_dnd
+        '''
+        First detect which view got its columns rearranged.
+        '''
         GObject.GObject.handler_block_by_func(tv, self.on_columns_changed)
         GObject.GObject.handler_block_by_func(other_tv, self.on_columns_changed)
         '''
@@ -1024,14 +1017,11 @@ class MyData:
     def on_column_width_changed(self, col, width):
         '''
         Keep widths of columns the same in both sorted and unsorted views.
+        '''
+        other_tv = self.treeview_sort if col.tv == self.treeview_dnd else self.treeview_dnd
+        '''
+        First determine which view had a column width change.
         '''        
-        if col.tv == self.treeview_dnd:
-            '''
-            First determine which view had a column width change.
-            '''
-            other_tv = self.treeview_sort
-        else:
-            other_tv = self.treeview_dnd
         other_col = _get_column_by_title(col.get_title(), other_tv)
         '''
         Find the same column in the other view as the one that's had a 
@@ -1044,7 +1034,6 @@ class MyData:
         the change in the "slave" column doesn't itself invoke this method and make
         us chase our tails.
         '''
-
         other_col.set_sizing(Gtk.TreeViewColumnSizing.FIXED)
         other_col.set_fixed_width(col.get_width())
         '''
@@ -1056,9 +1045,14 @@ class MyData:
 
         other_col.set_resizable(True)
         '''
-        If a column-width change and switch in views makes the last column
-        in the view too wide, it must be set to resizable so the user can 
-        fix it. This is a kludgy solution that should be improved.
+        "Completed?" and "Priority" are fixed width and not resizable
+        at program start. A reduction in another column's width can expand
+        them, however, if they're the last column in the view because
+        Gtk always expands the last column to take up all "extra" room
+        in the view. If the user switches the view while one of these
+        columns is expanded, its new size will become "fixed" and the
+        user will not be able to reduce that width unless the column is
+        made resizable. This is a kludgy solution that should be improved.
         '''
         return
         
