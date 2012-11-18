@@ -8,6 +8,11 @@ from gi.repository import GdkPixbuf #@UnresolvedImport pylint: disable-msg=E0611
 from gi.repository import GObject   #@UnresolvedImport pylint: disable-msg=E0611
 from gi.repository import Pango     #@UnresolvedImport pylint: disable-msg=E0611
 
+PROJECT = 0
+CONTEXT = 1
+PRIORITY = 2
+COMPLETED = 3
+
 class MyData:
     """ 
     Main program class - defines elements of the principal 
@@ -21,7 +26,7 @@ class MyData:
         in the Data_Entry.glade file.        
         '''
         self.window = builder.get_object("window")
-        self.window.set_title("Unsaved Data File")
+        self.window.set_title("Unsaved Data")
         '''
         Set up treeview to display unsorted data model. Unsorted
         views can be dragged and dropped to change their order.
@@ -44,7 +49,7 @@ class MyData:
         and treeview for ease of use in signal handling.
         '''
         project_renderer.column_obj = project_column
-        project_renderer.column_number = 0
+        project_renderer.column_number = PROJECT
         project_renderer.tv = self.treeview_dnd
         project_column.tv = self.treeview_dnd
         project_column.set_cell_data_func(project_renderer, _format_func, func_data = None)
@@ -56,7 +61,7 @@ class MyData:
         context_column = builder.get_object("ContextColumn")
         context_renderer = builder.get_object("ContextCellRendererText")
         context_renderer.column_obj = context_column
-        context_renderer.column_number = 1
+        context_renderer.column_number = CONTEXT
         context_renderer.tv = self.treeview_dnd
         context_column.set_cell_data_func(context_renderer, _format_func, func_data = None)
         context_column.tv = self.treeview_dnd
@@ -64,7 +69,7 @@ class MyData:
         priority_column = builder.get_object("PriorityColumn")
         priority_renderer = builder.get_object("PriorityCellRendererSpin")
         priority_renderer.column_obj = priority_column
-        priority_renderer.column_number = 2
+        priority_renderer.column_number = PRIORITY
         priority_renderer.tv = self.treeview_dnd
         priority_column.set_cell_data_func(priority_renderer, _format_func, func_data = None)
         priority_column.tv = self.treeview_dnd
@@ -72,7 +77,7 @@ class MyData:
         completed_column = builder.get_object("CompletedColumn")
         completed_renderer = builder.get_object("CompletedCellRendererToggle")
         completed_renderer.column_obj = completed_column
-        completed_renderer.column_number = 3
+        completed_renderer.column_number = COMPLETED
         completed_renderer.tv = self.treeview_dnd
         completed_column.tv = self.treeview_dnd
         completed_column.connect("notify::width", self.on_column_width_changed)
@@ -102,7 +107,7 @@ class MyData:
         project_column_sorted = builder.get_object("ProjectColumnSorted")
         project_sorted_renderer = builder.get_object("ProjectSortedCellRendererText")
         project_sorted_renderer.column_obj = project_column_sorted
-        project_sorted_renderer.column_number = 0
+        project_sorted_renderer.column_number = PROJECT
         project_sorted_renderer.tv = self.treeview_sort
         project_column_sorted.set_cell_data_func(project_sorted_renderer, _format_func, func_data = None)
         project_column_sorted.tv = self.treeview_sort
@@ -110,7 +115,7 @@ class MyData:
         context_column_sorted = builder.get_object("ContextColumnSorted")
         context_sorted_renderer = builder.get_object("ContextSortedCellRendererText")
         context_sorted_renderer.column_obj = context_column_sorted
-        context_sorted_renderer.column_number = 1
+        context_sorted_renderer.column_number = CONTEXT
         context_sorted_renderer.tv = self.treeview_sort
         context_column_sorted.set_cell_data_func(context_sorted_renderer, _format_func, func_data = None)
         context_column_sorted.tv = self.treeview_sort
@@ -118,7 +123,7 @@ class MyData:
         priority_column_sorted = builder.get_object("PriorityColumnSorted")
         priority_sorted_renderer = builder.get_object("PrioritySortedCellRendererSpin")
         priority_sorted_renderer.column_obj = priority_column_sorted
-        priority_sorted_renderer.column_number = 2
+        priority_sorted_renderer.column_number = PRIORITY
         priority_sorted_renderer.tv = self.treeview_sort
         priority_column_sorted.set_cell_data_func(priority_sorted_renderer, _format_func, func_data = None)
         priority_column_sorted.tv = self.treeview_sort
@@ -126,7 +131,7 @@ class MyData:
         completed_column_sorted = builder.get_object("CompletedColumnSorted")
         completed_sorted_renderer = builder.get_object("CompletedSortedCellRendererToggle")
         completed_sorted_renderer.column_obj = completed_column_sorted
-        completed_sorted_renderer.column_number = 3
+        completed_sorted_renderer.column_number = COMPLETED
         completed_sorted_renderer.tv = self.treeview_sort
         completed_column_sorted.tv = self.treeview_sort
         completed_column_sorted.connect("notify::width", self.on_column_width_changed)
@@ -179,10 +184,7 @@ class MyData:
         First check for unsaved data and ask if it should be saved.
         '''
         if not self.disk_file and len(self.CurrentRecordsStore) > 0:
-            if len(self.CurrentRecordsStore) > 1:
-                plural = True
-            else:
-                plural = False           
+            plural = True if len(self.CurrentRecordsStore) > 1 else False          
             self.save_unsaved(plural)    
         '''Throw up a dialog asking if the user really wants to quit.'''
         msg = Gtk.MessageDialog(None, Gtk.DialogFlags.MODAL, 
@@ -244,15 +246,15 @@ class MyData:
             the user supplied as the default values and the cursor set in the first data
             entry field that caused the error check to fail.
             '''
-        elif _error_check(0, record['project']):
+        elif _error_check(PROJECT, record['project']):
             record['focus'] = 'project'
             self.on_add_button_clicked(widget, record)
             
-        elif _error_check(1, record['context']):
+        elif _error_check(CONTEXT, record['context']):
             record['focus'] = 'context'
             self.on_add_button_clicked(widget, record)
         
-        elif _error_check(2, record['priority']):
+        elif _error_check(PRIORITY, record['priority']):
             record['focus'] = 'priority'
             self.on_add_button_clicked(widget, record)            
         else:
@@ -329,7 +331,7 @@ class MyData:
         needed here also because the user could enter an invalid Priority value from
         the keyboard.
         '''
-        if (text.isdigit() and cell.column_number == 2):
+        if (text.isdigit() and cell.column_number == PRIORITY):
             '''
             Check that this is the Priority Column before casting to an int because the
             Project Column can take numeric values that must be in str format.
@@ -710,16 +712,19 @@ class MyData:
         all_filter.add_pattern("*.*")
         dialog.add_filter(all_filter)
         response = dialog.run()
-        if response == Gtk.ResponseType.OK:
-            '''
-            Before opening a file, close any file we presently have open
-            and wipe the ListStore.
-            '''
-            if self.disk_file:
-                shelve.Shelf.close(self.disk_file)
-                self.disk_file = None
+        if response == Gtk.ResponseType.OK:            
             try:
+                if self.disk_file:
+                    shelve.Shelf.close(self.disk_file)
+                    self.disk_file = None
+                    self.window.set_title("Unsaved Data")
+                    '''
+                    Before opening a file, close any file we presently have open
+                    and wipe the ListStore.
+                    '''
                 self.CurrentRecordsStore.clear()
+                self.history = History()
+                '''Clear undo/redo stack from prior operations '''
                 self.disk_file = shelve.open(dialog.get_filename(),
                                           writeback = True)
                 '''First, retrieve the 'names' element of the CurrentDataStore'''
@@ -737,8 +742,7 @@ class MyData:
                 GObject.GObject.handler_unblock_by_func(self.CurrentRecordsStore, self.on_row_inserted)
                 '''Change the window title to reflect the file we're now using.'''
                 self.window.set_title(os.path.basename(dialog.get_filename()))
-                self.history = History()
-                '''Clear undo/redo stack from prior operations '''
+                
                 self.window.reshow_with_initial_size()
             except Exception as inst:
                 msg = Gtk.MessageDialog(None, Gtk.DialogFlags.MODAL,
@@ -938,12 +942,9 @@ class MyData:
         Ask user if he'd like to save unsaved data before taking a step that
         will purge unsaved records.
         '''
-        if plural:
-            txt1 = "You have unsaved data records."
-            txt2 = "Do you wish to save them?"
-        else:
-            txt1 = "You have an unsaved data record."
-            txt2 = "Do you wish to save it?"
+        txt1 = "You have unsaved data records." if plural else "You have an unsaved data record."
+        txt2 = "Do you wish to save them?" if plural else "Do you wish to save it?"
+
         msg = Gtk.MessageDialog(None, Gtk.DialogFlags.MODAL, 
                                 Gtk.MessageType.QUESTION, 
                                 Gtk.ButtonsType.OK_CANCEL, 
@@ -1061,7 +1062,7 @@ def _error_check(col_num, text):
         Check proposed input for invalid data. Return True if there's an error,
         False if everything's good.
         '''
-        if col_num == 0:
+        if col_num == PROJECT:
             '''If column calls for a string, it cannot be empty '''
             if not text:
                 msg = Gtk.MessageDialog(None, Gtk.DialogFlags.MODAL,
@@ -1074,7 +1075,7 @@ def _error_check(col_num, text):
                 return True
             else:
                 return False
-        elif col_num == 1:
+        elif col_num == CONTEXT:
             if (len(text) < 2 or not text.startswith('@')):
                 msg = Gtk.MessageDialog(None, Gtk.DialogFlags.MODAL,
                                 Gtk.MessageType.ERROR, Gtk.ButtonsType.OK,
@@ -1087,7 +1088,7 @@ def _error_check(col_num, text):
             else:
                 return False
             
-        elif col_num == 2:            
+        elif col_num == PRIORITY:            
             '''
             If column calls for a number, it must be between 1 and 4. The
             Spinbutton and its adjustment should guarantee compliance, but
@@ -1167,13 +1168,13 @@ def _format_func(column, cell, model, my_iter, data = None):
     value for each record; 1s get rendered in UltraHeavy, 2s
     and 3s in Normal and 4s in UltraLight weight script.
     '''
-    if (model.get_value(my_iter, 2) == 1):
+    if (model.get_value(my_iter, PRIORITY) == 1):
         cell.set_property("weight", Pango.Weight.ULTRAHEAVY)
-    elif (model.get_value(my_iter, 2) == 4):
+    elif (model.get_value(my_iter, PRIORITY) == 4):
         cell.set_property("weight", Pango.Weight.ULTRALIGHT)
     else:
         cell.set_property("weight", Pango.Weight.NORMAL)
-    if (model.get_value(my_iter, 3) == True):
+    if (model.get_value(my_iter, COMPLETED) == True):
         '''
         Records marked Completed (column 3 == True) get strikethrough rendered.
         '''
