@@ -265,14 +265,25 @@ class MyData:
             here. We're not concerned with sorting and order in the data stores
             here - just add the new record to the end.
             '''
-            row = [record['project'], record['context'], record['priority'], record['completed']]
+            row = [record[x] for x in ['project', 'context', 'priority', 'completed']]
             '''
             Next two functions are the "do" and "undo" for adding a record that get added to the 
             undo/redo history stack.
             '''
             perform = (self.CurrentRecordsStore.append, [row])
-            revert = (_delete_row, [self.CurrentRecordsStore, len(self.CurrentRecordsStore)-1])
+            revert = (_delete_row, [self.CurrentRecordsStore, len(self.CurrentRecordsStore)])
+            '''
+            Normally, the row number to be deleted would be one less than the length of
+            the ListStore to delete the last record because, like lists, ListStore
+            elements are numbered from 0. Here, however, the record hasn't yet been added
+            to the ListStore when we set up our revert function, so the length of the
+            ListStore now is one record shorter than it will be when our revert function
+            gets called. Thus, the row number argument for our revert function must be
+            made one greater than we'd normally use, i.e., the length of the ListStore,
+            not that length minus one.
+            '''
             self.history.add(perform, revert)
+            print("ListStore is {0} elements long.".format(len(self.CurrentRecordsStore)))
     
     def validation_on_editing_started(self, cell, cell_editable, row):
         '''
@@ -934,9 +945,7 @@ class MyData:
         msg.set_title("Program Instructions")
         msg.run()
         msg.hide()
-        
-    
-        
+               
     def save_unsaved(self, plural):
         '''
         Ask user if he'd like to save unsaved data before taking a step that
@@ -1116,7 +1125,7 @@ def _error_check(col_num, text):
 
 def _enter_edit(liststore, path, cell, text):
     '''
-    Function for final entry of edits or undo or edits to specific cells.
+    Function for final entry of edits or undo of edits to specific cells.
     '''
     liststore[path][cell.column_number] = text
     
