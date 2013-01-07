@@ -1,4 +1,7 @@
-from Model import AddRecordDialog   #@UnresolvedImport
+'''
+Main file for demo Gtk data entry, display and edit program,
+'''
+from Model import add_record_dialog   #@UnresolvedImport
 from History import History         #@UnresolvedImport
 import os
 import shelve
@@ -24,7 +27,7 @@ class MyData:
         '''
         Nearly all of the UI elements and their signal connections are defined
         in the Data_Entry.glade file.        
-        '''
+        '''#pylint: disable-msg=W0105
         self.window = builder.get_object("window")
         self.window.set_title("Unsaved Data")
         '''
@@ -33,37 +36,41 @@ class MyData:
         Once a view has been sorted, drag'n drop is no longer
         possible, so we have a separate model using a TreeModelSort
         to present a sortable view.
-        '''
+        '''#pylint: disable-msg=W0105
         self.scroller = builder.get_object("scroller")
         '''
         Present the data inside a window with scroll bars.
         Program starts with the unsorted view active - the 
         Glade file makes treeview_dnd scroller's child widget.
         A toggle button allows us to swap in the sortable view.
-        '''
+        '''#pylint: disable-msg=W0105
         self.treeview_dnd = builder.get_object("treeview_dnd")
         project_column = builder.get_object("ProjectColumn")
         project_renderer = builder.get_object("ProjectCellRendererText")
         '''
         Associate each renderer (cell) with its column and column number
         and treeview for ease of use in signal handling.
-        '''
+        '''#pylint: disable-msg=W0105
         project_renderer.column_obj = project_column
         project_renderer.column_number = PROJECT
         project_renderer.tv = self.treeview_dnd
         project_column.tv = self.treeview_dnd
-        project_column.set_cell_data_func(project_renderer, _format_func, func_data = None)
+        project_column.set_cell_data_func(project_renderer,
+                                           _format_func, 
+                                           func_data = None)
         project_column.connect("notify::width", self.on_column_width_changed)
         '''
-        Listen to notifications of column width changes to synchronize appearance of
-        sorted and unsorted views.
-        '''
+        Listen to notifications of column width changes to synchronize
+        appearance of sorted and unsorted views.
+        '''#pylint: disable-msg=W0105
         context_column = builder.get_object("ContextColumn")
         context_renderer = builder.get_object("ContextCellRendererText")
         context_renderer.column_obj = context_column
         context_renderer.column_number = CONTEXT
         context_renderer.tv = self.treeview_dnd
-        context_column.set_cell_data_func(context_renderer, _format_func, func_data = None)
+        context_column.set_cell_data_func(context_renderer, 
+                                          _format_func, 
+                                          func_data = None)
         context_column.tv = self.treeview_dnd
         context_column.connect("notify::width", self.on_column_width_changed)
         priority_column = builder.get_object("PriorityColumn")
@@ -71,9 +78,12 @@ class MyData:
         priority_renderer.column_obj = priority_column
         priority_renderer.column_number = PRIORITY
         priority_renderer.tv = self.treeview_dnd
-        priority_column.set_cell_data_func(priority_renderer, _format_func, func_data = None)
+        priority_column.set_cell_data_func(priority_renderer, 
+                                           _format_func, 
+                                           func_data = None)
         priority_column.tv = self.treeview_dnd
-        priority_column.connect("notify::width", self.on_column_width_changed)      
+        priority_column.connect("notify::width", 
+                                self.on_column_width_changed)      
         completed_column = builder.get_object("CompletedColumn")
         completed_renderer = builder.get_object("CompletedCellRendererToggle")
         completed_renderer.column_obj = completed_column
@@ -82,16 +92,19 @@ class MyData:
         completed_column.tv = self.treeview_dnd
         completed_column.connect("notify::width", self.on_column_width_changed)
         '''
-        The following item later holds references to the data records the user has 
-        selected in the treeview and, by extension, the Gtk.ListStore from which
-        the data in those records were taken.
-        '''
-        self.selection = builder.get_object("treeview-selection")
+        The following item later holds references to the data records the user  
+        has selected in the treeview and, by extension, the Gtk.ListStore from 
+        which the data in those records were taken.
+        '''#pylint: disable-msg=W0105
+#        self.selection = builder.get_object("treeview-selection")
         '''
         The ListStore used for in-memory storage and display of the data.
-        '''
+        '''#pylint: disable-msg=W0105
         self.CurrentRecordsStore = builder.get_object("CurrentRecordsStore")
-        self.CurrentRecordsStore.names = ["Project", "Context", "Priority", "Completed?"]     
+        self.CurrentRecordsStore.names = ["Project", 
+                                          "Context", 
+                                          "Priority", 
+                                          "Completed?"]     
         self.paths_selected = None
         '''
         Reference to list of records selected at any given time. This is 
@@ -99,59 +112,74 @@ class MyData:
         selection (from the sorted or unsorted treeview) was used and converts
         the path references from the sorted view to those needed to manipulate
         the underlying unsorted data model.
-        '''    
+        '''#pylint: disable-msg=W0105    
         self.treeview_sort = builder.get_object("treeview_sort")
         '''
         This view presents the records sorted, courtesy of a TreeModelSort.
-        '''
+        '''#pylint: disable-msg=W0105
         project_column_sorted = builder.get_object("ProjectColumnSorted")
-        project_sorted_renderer = builder.get_object("ProjectSortedCellRendererText")
+        project_sorted_renderer = builder.get_object(
+                        "ProjectSortedCellRendererText")
         project_sorted_renderer.column_obj = project_column_sorted
         project_sorted_renderer.column_number = PROJECT
         project_sorted_renderer.tv = self.treeview_sort
-        project_column_sorted.set_cell_data_func(project_sorted_renderer, _format_func, func_data = None)
+        project_column_sorted.set_cell_data_func(project_sorted_renderer, 
+                                                 _format_func, 
+                                                 func_data = None)
         project_column_sorted.tv = self.treeview_sort
-        project_column_sorted.connect("notify::width", self.on_column_width_changed)
+        project_column_sorted.connect("notify::width", 
+                                      self.on_column_width_changed)
         context_column_sorted = builder.get_object("ContextColumnSorted")
-        context_sorted_renderer = builder.get_object("ContextSortedCellRendererText")
+        context_sorted_renderer = builder.get_object(
+                        "ContextSortedCellRendererText")
         context_sorted_renderer.column_obj = context_column_sorted
         context_sorted_renderer.column_number = CONTEXT
         context_sorted_renderer.tv = self.treeview_sort
-        context_column_sorted.set_cell_data_func(context_sorted_renderer, _format_func, func_data = None)
+        context_column_sorted.set_cell_data_func(context_sorted_renderer, 
+                                                 _format_func, 
+                                                 func_data = None)
         context_column_sorted.tv = self.treeview_sort
-        context_column_sorted.connect("notify::width", self.on_column_width_changed)
+        context_column_sorted.connect("notify::width", 
+                                      self.on_column_width_changed)
         priority_column_sorted = builder.get_object("PriorityColumnSorted")
-        priority_sorted_renderer = builder.get_object("PrioritySortedCellRendererSpin")
+        priority_sorted_renderer = builder.get_object(
+                        "PrioritySortedCellRendererSpin")
         priority_sorted_renderer.column_obj = priority_column_sorted
         priority_sorted_renderer.column_number = PRIORITY
         priority_sorted_renderer.tv = self.treeview_sort
-        priority_column_sorted.set_cell_data_func(priority_sorted_renderer, _format_func, func_data = None)
+        priority_column_sorted.set_cell_data_func(priority_sorted_renderer, 
+                                                  _format_func, 
+                                                  func_data = None)
         priority_column_sorted.tv = self.treeview_sort
-        priority_column_sorted.connect("notify::width", self.on_column_width_changed)
+        priority_column_sorted.connect("notify::width", 
+                                       self.on_column_width_changed)
         completed_column_sorted = builder.get_object("CompletedColumnSorted")
-        completed_sorted_renderer = builder.get_object("CompletedSortedCellRendererToggle")
+        completed_sorted_renderer = builder.get_object(
+                        "CompletedSortedCellRendererToggle")
         completed_sorted_renderer.column_obj = completed_column_sorted
         completed_sorted_renderer.column_number = COMPLETED
         completed_sorted_renderer.tv = self.treeview_sort
         completed_column_sorted.tv = self.treeview_sort
-        completed_column_sorted.connect("notify::width", self.on_column_width_changed)
+        completed_column_sorted.connect("notify::width", 
+                                        self.on_column_width_changed)
         self.sorted_selection = builder.get_object("treeview_sort_selection")
-        self.CurrentRecordsStoreSorted = builder.get_object("CurrentRecordsStoreSorted")
+        self.CurrentRecordsStoreSorted = builder.get_object(
+                                    "CurrentRecordsStoreSorted")
         
         self.disk_file = None
         '''
         No disk storage of records at program start.
-        '''
+        '''#pylint: disable-msg=W0105
         self.validate_retry = False
         '''
         Flag indicating whether an edit is a retry after an attempt
         to enter invalid data.
-        '''
+        '''#pylint: disable-msg=W0105
         self.invalid_text_for_retry = ""
         '''
         Initialize variable to hold the invalid text attempted to be 
         entered in an earlier unsuccessful edit.
-        '''
+        '''#pylint: disable-msg=W0105
         builder.connect_signals(self)
 
         targets =   [('MY_TREE_MODEL_ROW', Gtk.TargetFlags.SAME_WIDGET, 1),
@@ -159,25 +187,29 @@ class MyData:
                      ('TEXT', Gtk.TargetFlags.SAME_WIDGET, 3),
                      ('STRING', Gtk.TargetFlags.SAME_WIDGET, 4)]
         '''
-        Targets for drag and drop. Probably redundant, given the use of add_text_targets methods
-        used below.
-        '''
-        self.treeview_dnd.enable_model_drag_source(Gdk.ModifierType.BUTTON1_MASK, targets, Gdk.DragAction.DEFAULT|Gdk.DragAction.MOVE)
+        Targets for drag and drop. Probably redundant, given the use 
+        of add_text_targets methods used below.
+        '''#pylint: disable-msg=W0105
+        self.treeview_dnd.enable_model_drag_source(Gdk.ModifierType.BUTTON1_MASK, 
+                                                   targets, 
+                                                   Gdk.DragAction.DEFAULT|
+                                                   Gdk.DragAction.MOVE)
         self.treeview_dnd.enable_model_drag_dest(targets, Gdk.DragAction.MOVE)
         '''
         Make the unsorted treeview a source and destination for drag and drop.
-        '''
+        '''#pylint: disable-msg=W0105
         self.treeview_dnd.drag_dest_add_text_targets()
         self.treeview_dnd.drag_source_add_text_targets()
         '''
-        The previous two methods add text formats compatible with Gtk.SelectionData to the target list
-        for the unsorted treeview. These are the targets that actually get used; as of now, drag and drop
-        won't work without these two methods.
-        '''
+        The previous two methods add text formats compatible with 
+        Gtk.SelectionData to the target list for the unsorted treeview. 
+        These are the targets that actually get used; as of now, drag 
+        and drop won't work without these two methods.
+        '''#pylint: disable-msg=W0105
         self.history = History()
         '''
         Add a stack for storing actions that can be undone and redone.
-        '''    
+        '''#pylint: disable-msg=W0105    
     def on_window_delete(self, widget, event): # pylint: disable-msg = w0613
         '''
         When the user clicks the 'close window' gadget.
@@ -186,7 +218,9 @@ class MyData:
         if not self.disk_file and len(self.CurrentRecordsStore) > 0:
             plural = True if len(self.CurrentRecordsStore) > 1 else False          
             self.save_unsaved(plural)    
-        '''Throw up a dialog asking if the user really wants to quit.'''
+        '''
+        Throw up a dialog asking if the user really wants to quit.
+        '''#pylint: disable-msg=W0105
         msg = Gtk.MessageDialog(None, Gtk.DialogFlags.MODAL, 
                                 Gtk.MessageType.QUESTION, 
                                 Gtk.ButtonsType.OK_CANCEL, 
@@ -198,7 +232,7 @@ class MyData:
             '''
             Before quitting, check to see if we have a disk file open;
             if so, close it and only then quit.
-            '''
+            '''#pylint: disable-msg=W0105
             if self.disk_file:
                 shelve.Shelf.close(self.disk_file)
             Gtk.main_quit()
@@ -206,7 +240,7 @@ class MyData:
             '''
             If the user changes mind and doesn't want to quit, just go back
             to where we were.
-            '''
+            '''#pylint: disable-msg=W0105
             msg.destroy()
             return True
 
@@ -221,31 +255,31 @@ class MyData:
             as a parameter to avoid using the same object in all
             record creations and the side-effects to which that
             could lead. 
-            '''
+            '''#pylint: disable-msg=W0105
             fields = {'project':'',
                       'context': '',
                       'priority': 1.0,
                       'focus': None,
                       'completed': False }
         
-        record = AddRecordDialog(self.CurrentRecordsStore, fields)
-        '''
-        We pass the ListStore we're using as a parameter to allow for eventual use
-        of multiple ListStores.
-        '''
+        record = add_record_dialog(fields)
+        
         if record == None:
             '''
             If the user clicked "Cancel" in the Add Record dialog, just do nothing and
             go back to where we were.
-            '''
+            '''#pylint: disable-msg=W0105
             return
             '''
-            Check the proposed new record to see if the data are valid;non-empty strings
-            for Project and Context columns and an integer between 1 and 4 for Priority.
-            If there are errors, we again call the Add Record dialog, but with the values,
-            the user supplied as the default values and the cursor set in the first data
-            entry field that caused the error check to fail.
-            '''
+            Check the proposed new record to see if the data are valid;
+            a non-empty string for Project, a string beginning with "@"
+            and having at least one additional character for Context, 
+            and an integer between 1 and 4 for Priority. If there are  
+            errors, we again call the Add Record dialog, but with the  
+            values the user supplied as the defaults and the cursor set 
+            in the first dataentry field that caused the error check to 
+            fail.
+            '''#pylint: disable-msg=W0105, W0101
         elif _error_check(PROJECT, record['project']):
             record['focus'] = 'project'
             self.on_add_button_clicked(widget, record)
@@ -264,26 +298,30 @@ class MyData:
             signal will add the record to the disk file, so we needn't do that
             here. We're not concerned with sorting and order in the data stores
             here - just add the new record to the end.
+            '''#pylint: disable-msg=W0105
+            row = [record[x] for x in ['project', 
+                                       'context', 
+                                       'priority', 
+                                       'completed']]
             '''
-            row = [record[x] for x in ['project', 'context', 'priority', 'completed']]
-            '''
-            Next two functions are the "do" and "undo" for adding a record that get added to the 
-            undo/redo history stack.
-            '''
+            Next two functions are the "do" and "undo" for adding a record 
+            that get added to the undo/redo history stack.
+            '''#pylint: disable-msg=W0105
             perform = (self.CurrentRecordsStore.append, [row])
-            revert = (_delete_row, [self.CurrentRecordsStore, len(self.CurrentRecordsStore)])
+            revert = (_delete_row, 
+                      [self.CurrentRecordsStore, len(self.CurrentRecordsStore)])
             '''
-            Normally, the row number to be deleted would be one less than the length of
-            the ListStore to delete the last record because, like lists, ListStore
-            elements are numbered from 0. Here, however, the record hasn't yet been added
-            to the ListStore when we set up our revert function, so the length of the
-            ListStore now is one record shorter than it will be when our revert function
-            gets called. Thus, the row number argument for our revert function must be
-            made one greater than we'd normally use, i.e., the length of the ListStore,
-            not that length minus one.
-            '''
+            Normally, the row number to be deleted would be one less than 
+            the length of the ListStore to delete the last record because, 
+            like lists, ListStore elements are numbered from 0. Here, however, 
+            the record hasn't yet been added to the ListStore when we set up 
+            our revert function, so the length of the ListStore now is one 
+            record shorter than it will be when our revert function gets 
+            called. Thus, the row number argument for our revert function 
+            must be made one greater than we'd normally use, i.e., the length 
+            of the ListStore,not that length minus one.
+            '''#pylint: disable-msg=W0105
             self.history.add(perform, revert)
-            print("ListStore is {0} elements long.".format(len(self.CurrentRecordsStore)))
     
     def validation_on_editing_started(self, cell, cell_editable, row):
         '''
@@ -298,9 +336,9 @@ class MyData:
                 self.invalid_text_for_retry = str(self.invalid_text_for_retry)
             cell_editable.set_text(self.invalid_text_for_retry)
             '''
-            Reset flag and invalid text variables to their defaults now that we've
-            set up the Gtk.Entry
-            '''
+            Reset flag and invalid text variables to their defaults now that 
+            we've set up the Gtk.Entry
+            '''#pylint: disable-msg=W0105
             self.validate_retry = False
             self.invalid_text_for_retry = ""
 
@@ -315,16 +353,19 @@ class MyData:
         The treeview's selection mode is set to MULTIPLE, but if we're editing a
         cell, only a single row will have been selected. This gives us a single-
         member tuple of paths, so we subscript the selection to get the path
-        parameter needed to obtain the iterator required to fetch the preexisting
-        data for this cell from the model. We don't need to deal with conversions
-        for cells in the sorted tv because the on_selection_changed method takes
-        care of that.
+        parameter needed to obtain the iterator required to fetch the pre-
+        existing data for this cell from the model. We don't need to deal with 
+        conversions for cells in the sorted tv because the on_selection_changed 
+        method takes care of that.
+        '''#pylint: disable-msg=W0105
+        cell.set_property("text", 
+                          self.CurrentRecordsStore.get_value(my_iter, 
+                                                            cell.column_number))
         '''
-        cell.set_property("text", self.CurrentRecordsStore.get_value(my_iter, cell.column_number))
-        '''
-        We associated the number of the column in which each cellrenderer fell with
-        the cellrenderer because of calls like the one immediately above.
-        '''    
+        We associated the number of the column in which each cellrenderer 
+        fell with the cellrenderer because of calls like the one immediately
+        above.
+        '''#pylint: disable-msg=W0105    
     def validation_on_edited(self, cell, path, text):       
         '''        
         The "path" parameter emitted with the signal contains a str reference to
@@ -346,24 +387,25 @@ class MyData:
             '''
             Check that this is the Priority Column before casting to an int because the
             Project Column can take numeric values that must be in str format.
-            '''
+            '''#pylint: disable-msg=W0105
             text = int(text)
             '''
-            Now submit the new, updated data field to a function that checks it for
-            invalid values.If the updated record fails the error check, the 
-            on_records_edited method returns without changing the existing record; if
-            the error check is passed, the updated data field gets written to the
-            appropriate row and column in the ListStore. This method's path 
-            parameter is a str representation of a Gtk.TreePath, so we must use
-            that to get a 'real' TreePath object with the "from string" version of
-            the Gtk.TreePath constructor. When the CellRenderers were created, the
-            column object to which each was attached was associated with that
-            CellRenderer. We use that association now to find the column we need.
-            '''
+            Now submit the new, updated data field to a function that checks it 
+            for invalid values.If the updated record fails the error check, the 
+            on_records_edited method returns without changing the existing 
+            record; if the error check is passed, the updated data field gets 
+            written to the appropriate row and column in the ListStore. This  
+            method's path parameter is a str representation of a Gtk.TreePath, 
+            so we must use that to get a 'real' TreePath object with the "from 
+            string" version of the Gtk.TreePath constructor. When the 
+            CellRenderers were created, the column object to which each was 
+            attached was associated with that CellRenderer. We use that 
+            association now to find the column we need.
+            '''#pylint: disable-msg=W0105
         if _error_check(cell.column_number, text):
             self.invalid_text_for_retry = text
             self.validate_retry = True
-            GObject.idle_add(self.restart_edit, cell.tv, path, cell.column_obj)
+            GObject.idle_add(_restart_edit, cell.tv, path, cell.column_obj)
             '''
             This is a bit of a hack to get around a long-standing bug in Gtk.
             The set_cursor method called in restart_edit destroys the Gtk.Entry
@@ -371,14 +413,15 @@ class MyData:
             to be emitted. Without the delay caused by wrapping the set_cursor
             method in the restart_edit method embedded in a call to 
             GObject.idle_add(), however, the "edited" signal gets sent before
-            the Entry gets destroyed, breaking the CellRenderer and its connection
-            to the underlying model's data. See www.gtkforums.com/viewtopic.php?t=4619
-            from December 2009! One can click again on the cell and enter a value,
-            but the cell will thereafter ALWAYS display ONLY that value, even when
-            rows or columns get shuffled. GObject.idle_add() makes the call to
-            set_cursor() asynchronously issue from the main loop's thread rather than
-            synchronously, as before.
-            '''
+            the Entry gets destroyed, breaking the CellRenderer and its 
+            connection to the underlying model's data. See www.gtkforums.com/
+            viewtopic.php?t=4619 from December 2009! One can click again on the 
+            cell and enter a value, but the cell will thereafter ALWAYS display 
+            ONLY that value, even when rows or columns get shuffled. 
+            GObject.idle_add() makes the call to set_cursor() asynchronously 
+            issue from the main loop's thread rather than synchronously, as 
+            before.
+            '''#pylint: disable-msg=W0105
         else: 
             if cell.tv == self.treeview_sort:
                 '''
@@ -386,30 +429,20 @@ class MyData:
                 unsorted model. Python can accept str representations of a path as Gtk.ListStore
                 indices, so no cast to int required, unlike the ordinary Python lists used
                 in the shelved disk file.
-                '''
-                path = self.CurrentRecordsStoreSorted.convert_path_to_child_path(Gtk.TreePath.new_from_string(path)).to_string()
+                '''#pylint: disable-msg=W0105
+                path = self.CurrentRecordsStoreSorted.convert_path_to_child_path(
+                                Gtk.TreePath.new_from_string(path)).to_string()
             old_text = self.CurrentRecordsStore[path][cell.column_number]
             '''
-            The pre-edit text is saved to use in an "undo" and then the "do" and "undo" of the edit are pushed onto
-            the undo/redo stack
-            '''
-            perform = (_enter_edit, [self.CurrentRecordsStore, path, cell, text])
-            revert = (_enter_edit, [self.CurrentRecordsStore, path, cell, old_text])
+            The pre-edit text is saved to use in an "undo" and then the "do"
+            and "undo" of the edit are pushed onto the undo/redo stack
+            '''#pylint: disable-msg=W0105
+            perform = (_enter_edit, 
+                       [self.CurrentRecordsStore, path, cell, text])
+            revert = (_enter_edit, 
+                      [self.CurrentRecordsStore, path, cell, old_text])
             self.history.add(perform, revert)
 
-    def restart_edit(self, tv, path, col):
-        '''
-        See comment above call to ErrorCheck in validation_on_edited()
-        method. The set_cursor() method causes the treeview to emit the
-        "editing-started" signal
-        '''
-        tv.set_cursor(Gtk.TreePath.new_from_string(path),
-                                             col,
-                                             True)
-        return False
-        '''
-        Return False so that this method called from idle_add() won't go on running forever.
-        '''
     def on_completed_toggled(self, cell, path):
         '''
         What to do if the user clicks a box in the "Completed?" column. Params sent
@@ -422,23 +455,25 @@ class MyData:
             Cells in the sorted view need to have path variables converted to paths
             pointing to the same cell in the underlying, unsorted model, in string
             format, not Gtk.TreePath.
-            '''
-            path = self.CurrentRecordsStoreSorted.convert_path_to_child_path(Gtk.TreePath.new_from_string(path)).to_string()
+            '''#pylint: disable-msg=W0105
+            path = self.CurrentRecordsStoreSorted.convert_path_to_child_path(
+                                Gtk.TreePath.new_from_string(path)).to_string()
         '''
         The "do" and "undo" actions pushed onto the history stack here are the same:
         Reverse the value stored at the appropriate location in the ListStore. The
         display updates automatically. Note the use of the column_number association
         in the toggle_completed method. 
-        '''
+        '''#pylint: disable-msg=W0105
         perform = (_toggle_cell, [self.CurrentRecordsStore, cell, path])
         revert = (_toggle_cell, [self.CurrentRecordsStore, cell, path])
         self.history.add(perform, revert)                
         
-    def on_delete_button_clicked(self, widget): # pylint: disable-msg = W0613       
+    def on_delete_button_clicked(self, widget):#pylint: disable-msg=W0613
+        '''When the use hits the "Delete Records" button '''      
         if not self.paths_selected:
             '''
             No records selected for deletion - do nothing.
-            '''
+            '''#pylint: disable-msg=W0105
             return
         '''
         Two methods for performing multiple deletions have been tried here.
@@ -463,45 +498,54 @@ class MyData:
         describing the path. Here this should be a single element tuple,
         but we need a simple integer as an index, so we take the single
         ELEMENT of the tuple as our index, not the tuple itself.     
-        '''
-#        for row in [Gtk.TreeRowReference.new(self.CurrentRecordsStore, path) for path in self.paths_selected]:
+        '''#pylint: disable-msg=W0105
+#        for row in [Gtk.TreeRowReference.new(self.CurrentRecordsStore, path) 
+#                    for path in self.paths_selected]:
 #            if row.get_path():
 #                '''check if the RowReference still points to a valid Path '''
 #                row_number = row.get_path().get_indices()[0]
 #                record = self.CurrentRecordsStore.get_iter(row.get_path())
-#                data = [self.CurrentRecordsStore.get_value(record, i) for i in range(self.CurrentRecordsStore.get_n_columns())]
+#                data = [self.CurrentRecordsStore.get_value(record, i) 
+#                    for i in range(self.CurrentRecordsStore.get_n_columns())]
 #                perform = (_delete_row, [self.CurrentRecordsStore, row_number])
 #                revert = (self.CurrentRecordsStore.insert, [row_number, data])
 #                self.history.add(perform, revert)
         '''
-        The method currently used is similar, but uses iters instead of TreeRowReferences.
-        '''
-        for record in [self.CurrentRecordsStore.get_iter(row) for row in self.paths_selected]: #pylint: disable-msg = E1103
+        The method currently used is similar, but uses iters instead of
+        TreeRowReferences.
+        '''#pylint: disable-msg=W0105
+        for record in [self.CurrentRecordsStore.get_iter(row) 
+                       for row in self.paths_selected]:#pylint:disable-msg=E1103
             if record:
                 '''
                 For each record selected for deletion, first check to see if the iter pointing to
                 the record is still valid.
-                '''
-                row_number = int(self.CurrentRecordsStore.get_path(record).to_string())
+                '''#pylint: disable-msg=W0105
+                row_number = int(self.CurrentRecordsStore.get_path(
+                                                record).to_string())
                 '''
                 Get the row number of the record to be deleted for use in "undo"
+                '''#pylint: disable-msg=W0105
+                data = [self.CurrentRecordsStore.get_value(record, i) 
+                        for i in range(self.CurrentRecordsStore.get_n_columns()
+                                                                             )]
                 '''
-                data = [self.CurrentRecordsStore.get_value(record, i) for i in range(self.CurrentRecordsStore.get_n_columns())]
-                '''
-                Save the data from each record to be deleted so the deletion can be reverted, if desired. 
-                '''
+                Save the data from each record to be deleted so the deletion 
+                can be reverted, if desired. 
+                '''#pylint: disable-msg=W0105
                 perform = (_delete_row, [self.CurrentRecordsStore, row_number])
                 '''
                 Perform the deletion
-                '''
+                '''#pylint: disable-msg=W0105
                 revert = (self.CurrentRecordsStore.insert, [row_number, data])
                 '''
                 Provide the function needed to undo the deletion.
-                '''
+                '''#pylint: disable-msg=W0105
                 self.history.add(perform, revert)
                 '''
-                Push the deletion and its reversion onto the undo/redo history stack.
-                '''
+                Push the deletion and its reversion onto the undo/redo history 
+                stack.
+                '''#pylint: disable-msg=W0105
         '''
         The callbacks for the signals generated by row insertion and
         deletion will cause the ListStore's changed state to be written
@@ -520,53 +564,64 @@ class MyData:
         and the program either would delete the wrong record or (more
         likely) crash trying to delete a non-existent row of the
         disk_file['store'] pointed to by an outdated TreePath.
-        '''    
+        '''  #pylint: disable-msg=W0105  
     def drag_data_get(self, tv, context, selection, target_id, time):
+        '''
+        How to get data for dragging and dropping a record.
+        '''
         path = self.paths_selected[0]
         '''
-        Drag and drop affects only single rows, so we just take the single element
-        of the instance variable that holds the contents of the treeview selection.
-        As noted above, the treeview selection object is set to multiple mode, so a
-        tuple is returned, not a simple value.
+        Drag and drop affects only single rows, so we just take the single 
+        element of the instance variable that holds the contents of the 
+        treeview selection. As noted above, the treeview selection object 
+        is set to multiple mode, so a tuple is returned, not a simple value.
         
-        First, construct a byte string data object containing the path number of the row
-        to be moved to use as the drag and drop data. The actual copying of the row to be
-        moved takes place in the drag_data_received() method - we need only communicate to
-        drag_data_received() the number of the row to be copied from the liststore.
-        '''
+        First, construct a byte string data object containing the path 
+        number of the row to be moved to use as the drag and drop data.
+        The actual copying of the row to be moved takes place in the 
+        drag_data_received() method - we need only communicate to 
+        drag_data_received() the number of the row to be copied from 
+        the liststore.
+        '''#pylint: disable-msg=W0105
         data = bytes(path.to_string(), "utf-8")
         selection.set(selection.get_target(), 8, data)
         '''
-        Finally, set the selection data object to the drag and drop data we've prepared.
-        '''             
+        Finally, set the selection data object to the drag and drop data 
+        we've prepared.
+        '''#pylint: disable-msg=W0105             
     def drag_data_received(self, tv, context, x, y, selection,  info, time):
+        '''
+        What to do when a dragged row gets dropped.
+        '''
         model = tv.get_model()
         path_string = selection.get_data().decode("utf-8")
         '''
-        The Gtk.SelectionData object we packed in drag_data_get gets decoded and unpacked into
-        its original form here.
-        '''
+        The Gtk.SelectionData object we packed in drag_data_get gets decoded
+        and unpacked into its original form here.
+        '''#pylint: disable-msg=W0105
         old_path_number = int(path_string)
         old_path = Gtk.TreePath.new_from_string(path_string)
         '''
         Use the path the treeview row to be moved originally had to track
-        where drag and drop data comes from and perform drag and drop and undo/redo.
-        '''
+        where drag and drop data comes from and perform drag and drop and 
+        undo/redo.
+        '''#pylint: disable-msg=W0105
         drop_info = tv.get_dest_row_at_pos(x, y)
         '''
-        If the data are dropped inside existing treeview rows, find where the drop occurred and
-        move the data in the model accordingly; if there's no drop_info, move the data to 
-        the end of the model.
-        '''
+        If the data are dropped inside existing treeview rows, find where 
+        the drop occurred and move the data in the model accordingly; if 
+        there's no drop_info, move the data to the end of the model.
+        '''#pylint: disable-msg=W0105
         if drop_info:
             target_path, position = drop_info
             target = int(target_path.to_string())
             '''
-            Now move the data according to where its representation was dropped and
-            keep track of changes as they're made so undo/redo becomes possible. The moved row
-            isn't part of the DnD data, only the path number pointing to it. The move is made 
-            here directly on the liststore by the move_row() method.
-            '''
+            Now move the data according to where its representation was 
+            dropped and keep track of changes as they're made so 
+            undo/redo becomes possible. The moved row isn't part of the 
+            DnD data, only the path number pointing to it. The move is 
+            made here directly on the liststore by the move_row() method.
+            '''#pylint: disable-msg=W0105
             if (position == Gtk.TreeViewDropPosition.BEFORE
                 or position == Gtk.TreeViewDropPosition.INTO_OR_BEFORE):                
                 '''
@@ -575,14 +630,18 @@ class MyData:
                 target row in a reversion must be adjusted depending upon which direction the
                 original move was in the treeview because of the effect of temporarily inserting
                 an additional row and then deleting it.  
-                '''               
-                perform = (_move_row,[model, old_path, target])
+                '''  #pylint: disable-msg=W0105             
+                perform = (_move_row, [model, old_path, target])
                 if(old_path_number < target):
                     revert_path = Gtk.TreePath.new_from_string(str(target-1)) 
-                    revert = (_move_row, [model, revert_path, old_path_number])                     
+                    revert = (_move_row, 
+                              [model, revert_path, old_path_number])
                 else:
-                    revert_path = Gtk.TreePath.new_from_string(str(target))                    
-                    revert = (_move_row, [model, revert_path, old_path_number+1])               
+                    revert_path = Gtk.TreePath.new_from_string(str(target))
+                    revert = (_move_row, 
+                              [model, 
+                               revert_path, 
+                               old_path_number+1])               
             else:
                 '''
                 An "after" drop means the position of the new path must be one greater than the
@@ -590,21 +649,27 @@ class MyData:
                 if the original row number was less than the new row number. The target for a 
                 reversion move must be one greater than the original row number in that case to
                 account for the insertion of a row.
-                '''                
+                '''#pylint: disable-msg=W0105                
                 perform = (_move_row, [model, old_path, target+1])
                 if(old_path_number < target):
                     revert_path = Gtk.TreePath.new_from_string(str(target))
-                    revert = (_move_row, [model, revert_path, old_path_number])                  
+                    revert = (_move_row, 
+                              [model, 
+                               revert_path, 
+                               old_path_number])                  
                 else:
                     revert_path = Gtk.TreePath.new_from_string(str(target+1))
-                    revert = (_move_row, [model, revert_path, old_path_number+1])                               
+                    revert = (_move_row, 
+                              [model, 
+                               revert_path, 
+                               old_path_number+1])                      
         else:
             target = len(model)
-            revert_path = Gtk.TreePath.new_from_string(str(len(model)-1))
+            revert_path = Gtk.TreePath.new_from_string(str(target-1))
             '''
-            The revert path must be one less than the length of the model to correct
-            for the earlier insertion of a new row.
-            '''           
+            The revert path must be one less than the length of the model 
+            to correct for the earlier insertion of a new row.
+            ''' #pylint: disable-msg=W0105          
             perform = (_move_row, [model, old_path, target])
             revert = (_move_row, [model, revert_path, old_path_number])
         self.history.add(perform, revert)
@@ -612,8 +677,9 @@ class MyData:
 #    because we delete a moved row by hand to more easily accommodate undo/redo
 #        if context.get_actions() == Gdk.DragAction.MOVE|Gdk.DragAction.DEFAULT:
 #            '''
-#            Tell the context in which the drag and drop occurred that the data in the row that's been
-#            moved can be deleted from the row it originally was in.
+#            Tell the context in which the drag and drop occurred that the data 
+#            in the row that's been moved can be deleted from the row it 
+#            originally was in.
 #            '''
 #            context.finish(True, True, time)
         return   
@@ -637,28 +703,32 @@ class MyData:
             not only represents the row number in the ListStore, it also works as the index
             for that row in self.disk_file['store']. We construct a list to be inserted into
             the disk file from the values found in the corresponding row of the ListStore.
-            '''
-            row = [model.get_value(my_iter, i) for i in range(model.get_n_columns())]
+            '''#pylint: disable-msg=W0105
+            row = [model.get_value(my_iter, i) 
+                   for i in range(model.get_n_columns())]
             self.disk_file['store'].insert(int(path.to_string()), row)
                         
     def on_row_deleted(self, model, path):
+        '''Update the disk file when a record gets deleted. '''
         if self.disk_file:
             '''
             The one-to-one relationship between disk_file and ListStore allows us
             to use the path parameter as an index to the list to be deleted from
             the disk file list of lists when a record is deleted.
-            '''
+            '''#pylint: disable-msg=W0105
             del self.disk_file['store'][int(path.to_string())]
             
     def on_row_changed(self, model, path, my_iter, data = None):
+        '''Update the disk file when a record gets edited. '''
         if self.disk_file:
             '''
             Rather than update only the field that's actually been edited, it's much
             easier just to resave the entire record (row). Again, the updated record
             is put into the form of a list constructed from the values found in the
             corresponding row of the ListStore and then written to disk.
-            '''
-            row = [model.get_value(my_iter, i) for i in range(model.get_n_columns())]
+            '''#pylint: disable-msg=W0105
+            row = [model.get_value(my_iter, i) 
+                   for i in range(model.get_n_columns())]
             self.disk_file['store'][int(path.to_string())] = row
 
     def on_selection_changed(self, selection):        
@@ -671,11 +741,14 @@ class MyData:
         instance variable is required.
         '''
         model, paths_selected = selection.get_selected_rows()
-        self.paths_selected = [self.CurrentRecordsStoreSorted.convert_path_to_child_path(path) for path in paths_selected] if model == self.CurrentRecordsStoreSorted else paths_selected
+        self.paths_selected = paths_selected if model == self.CurrentRecordsStore \
+          else [self.CurrentRecordsStoreSorted.convert_path_to_child_path(path) 
+                  for path in paths_selected] 
         '''
         Paths pointing to entries in the sorted tv need to be converted to paths
-        pointing to the "real," unsorted data store before they can be acted upon.
-        '''       
+        pointing to the "real," unsorted data store before they can be acted 
+        upon.
+        '''#pylint: disable-msg=W0105       
     def on_new_menu_item_activate(self, widget):       
         '''
         Go back to where we were when the program first opened: close and open
@@ -692,7 +765,9 @@ class MyData:
             self.save_unsaved(plural = False)
         self.CurrentRecordsStore.clear() #pylint: disable-msg=E1103
         self.history = History()
-        '''Clear undo/redo history from prior operations '''
+        '''
+        Clear undo/redo history from prior operations.
+        '''#pylint: disable-msg=W0105
         self.window.reshow_with_initial_size()
         self.window.set_title("Unsaved Data File")            
     
@@ -732,33 +807,41 @@ class MyData:
                     '''
                     Before opening a file, close any file we presently have open
                     and wipe the ListStore.
-                    '''
+                    '''#pylint: disable-msg=W0105
                 self.CurrentRecordsStore.clear()
                 self.history = History()
-                '''Clear undo/redo stack from prior operations '''
+                '''
+                Clear undo/redo stack from prior operations
+                '''#pylint: disable-msg=W0105
                 self.disk_file = shelve.open(dialog.get_filename(),
                                           writeback = True)
-                '''First, retrieve the 'names' element of the CurrentDataStore'''
+                '''
+                First, retrieve the 'names' element of the CurrentDataStore
+                '''#pylint: disable-msg=W0105
                 self.CurrentRecordsStore.names = self.disk_file["names"]
                 '''
                 Now read the record data row-by-row into the CurrentDataStore.
                 Block row_inserted until we're done so we don't rewrite into 
-                the disk file and duplicate every row inserted into the ListStore
-                from the disk file.
-                '''
-                GObject.GObject.handler_block_by_func(self.CurrentRecordsStore, self.on_row_inserted)
+                the disk file and duplicate every row inserted into the 
+                ListStore from the disk file.
+                '''#pylint: disable-msg=W0105
+                GObject.GObject.handler_block_by_func(
+                        self.CurrentRecordsStore, self.on_row_inserted)
                 for row in self.disk_file["store"]:
-                    self.CurrentRecordsStore.append(row) #pylint:disable-msg = E1103
+                    self.CurrentRecordsStore.append(row)#pylint:disable-msg=E1103
                     self.disk_file.sync()
-                GObject.GObject.handler_unblock_by_func(self.CurrentRecordsStore, self.on_row_inserted)
-                '''Change the window title to reflect the file we're now using.'''
+                GObject.GObject.handler_unblock_by_func(
+                    self.CurrentRecordsStore, self.on_row_inserted)
+                '''
+                Change the window title to reflect the file we're now using.
+                '''#pylint: disable-msg=W0105
                 self.window.set_title(os.path.basename(dialog.get_filename()))
                 
                 self.window.reshow_with_initial_size()
-            except Exception as inst:
+            except IOError as inst:
                 msg = Gtk.MessageDialog(None, Gtk.DialogFlags.MODAL,
                                    Gtk.MessageType.ERROR, Gtk.ButtonsType.OK,
-                                   "Couldn't open file {0}: {1} error." .format( 
+                                   "Couldn't open file {0}: {1} error.".format( 
                                    dialog.get_filename(), type(inst)))
                 msg.format_secondary_text(inst)
                 msg.set_title("File Open Error!")
@@ -799,7 +882,7 @@ class MyData:
                 In creating a new disk file, we need only append each row in the
                 CurrentRecordsStore to the newly-created 'store' key in the shelve
                 file. We're not concerned about ordering and sorting the data stores.
-                '''
+                '''#pylint: disable-msg=W0105
                 try:
                     self.disk_file = shelve.open(dialog.get_filename(),
                                                  writeback = True)
@@ -810,13 +893,15 @@ class MyData:
                         self.disk_file.sync()
                     '''
                     We're now using a file, so the window title should reflect that.
-                    '''
-                    self.window.set_title(os.path.basename(dialog.get_filename()))
+                    '''#pylint: disable-msg=W0105
+                    self.window.set_title(os.path.basename(
+                                        dialog.get_filename()))
                     dialog.destroy()
-                except Exception as inst:
+                except IOError as inst:
                     msg = Gtk.MessageDialog(None, Gtk.DialogFlags.MODAL,
-                                            Gtk.MessageType.ERROR, Gtk.ButtonsType.OK,
-                                            "Couldn't save file {0}: {1} error." .format( 
+                                            Gtk.MessageType.ERROR, 
+                                            Gtk.ButtonsType.OK,
+                                            "Couldn't save file {0}: {1} error.".format( 
                                             dialog.get_filename(),type(inst)))
                     msg.format_secondary_text(inst)
                     msg.set_title("Error Saving File!")
@@ -852,7 +937,7 @@ class MyData:
             In creating a new disk file, we need only append each row in the
             CurrentRecordsStore to the newly-created 'store' key in the shelve
             file. We're not concerned about ordering and sorting the data stores.
-            '''
+            '''#pylint: disable-msg=W0105
             try:
                 self.disk_file = shelve.open(dialog.get_filename(),
                                              writeback = True)
@@ -863,17 +948,18 @@ class MyData:
                 self.disk_file.sync()
                 '''
                 We're now using a file, so the window title should reflect that.
-                '''
+                '''#pylint: disable-msg=W0105
                 self.window.set_title(os.path.basename(dialog.get_filename()))
-            except Exception as inst:
-                    msg = Gtk.MessageDialog(None, Gtk.DialogFlags.MODAL,
-                                            Gtk.MessageType.ERROR, Gtk.ButtonsType.OK,
-                                            "Couldn't save file {0}: {1} error." .format( 
-                                            dialog.get_filename(),type(inst)))
-                    msg.format_secondary_text(inst)
-                    msg.set_title("Error Saving File!")
-                    msg.run()
-                    msg.destroy()
+            except IOError as inst:
+                msg = Gtk.MessageDialog(None, Gtk.DialogFlags.MODAL,
+                                        Gtk.MessageType.ERROR, 
+                                        Gtk.ButtonsType.OK,
+                                        "Couldn't save file {0}: {1} error.".format( 
+                                        dialog.get_filename(),type(inst)))
+                msg.format_secondary_text(inst)
+                msg.set_title("Error Saving File!")
+                msg.run()
+                msg.destroy()
             dialog.destroy()
         elif response == Gtk.ResponseType.CANCEL:
             dialog.destroy()
@@ -908,7 +994,9 @@ class MyData:
         msg.set_program_name("Gtk Training Wheels\nData Entry Demo")
         msg.set_version(".01 ... barely!")
         msg.set_copyright(copyright_notice)
-        msg.set_comments("A learning experience....\nThanks to Jens C. Knutson for all his help and inspiration.")
+        msg.set_comments("A learning experience....\n"
+                         "Thanks to Jens C. Knutson"
+                         " for all his help and inspiration.")
         msg.set_license_type(Gtk.License.GPL_3_0)
         msg.set_wrap_license(True)
         msg.set_website("http://www.dknutsonlaw.com")
@@ -922,23 +1010,17 @@ class MyData:
         '''
         Tell the user how to use the program.
         '''
-        instructions =  "To start, open a data file or create one by clicking 'Add Record.' " + \
-                        "All record fields are mandatory; Priority must be between 1 and 4, " + \
-                        "inclusive, and Context must start with @ and have at least one " + \
-                        "additional character.\n\nSelect records with the mouse and click " + \
-                        "'Delete Records' to remove them.\n\n" + \
-                        "Double click on data fields to edit them; hit Enter or Tab or click " + \
-                        "another cell in the chart to save the edited record. Hit Esc or " + \
-                        "click outside the chart to cancel edits and retrieve the old data.\n\n" + \
-                        "Click on the 'Drag and Drop?' button to switch between a view of the " + \
-                        "records that can be rearranged by dragging and dropping records and a " + \
-                        "view that can be sorted in either direction on any field by clicking " + \
-                        "on the column headers.\n\nUse the 'Save' or 'Save As' menuitems to " + \
-                        "save your entries to a file.\n\n" + \
-                        "Use the Edit Menu or shortcut keys to undo/redo entry or deletion of " + \
-                        "a record, edits of a record, or any reordering of records done through " + \
-                        "Drag and Drop.\n"
-                
+        instructions =  '''To start, open a data file or create one by clicking 'Add Record.' All record fields are mandatory; Priority must be between 1 and 4, inclusive, and Context must start with @ and have at least one additional character.
+        
+Select records with the mouse and click 'Delete Records' to remove them.
+        
+Double click on data fields to edit them; hit Enter or Tab or click another cell in the chart to save the edited record. Hit Esc or click outside the chart to cancel edits and retrieve the old data.
+        
+Click on the 'Drag and Drop?' button to switch between a view of the records that can be rearranged by dragging and dropping records and a view that can be sorted in either direction on any field by clicking on the column headers.
+        
+Use the 'Save' or 'Save As' menuitems to save your entries to a file.
+        
+Use the Edit Menu or shortcut keys to undo/redo entry or deletion of a record, edits of a record, or any reordering of records done through "Drag and Drop.'''
         msg = Gtk.MessageDialog(None, Gtk.DialogFlags.MODAL, 
                                 Gtk.MessageType.INFO, Gtk.ButtonsType.OK, 
                                 instructions)
@@ -964,14 +1046,14 @@ class MyData:
         if response == Gtk.ResponseType.OK:
             '''
             If the user chooses to save, call the Save method,
-            '''
+            '''#pylint: disable-msg=W0105
             self.on_save_menu_item_activate(msg)
             msg.destroy()
         elif response == Gtk.ResponseType.CANCEL:
             '''
             If the user chooses not to save, just destroy the Dialog
             and proceed with the task the user originally asked for.
-            '''
+            '''#pylint: disable-msg=W0105
             msg.destroy()
             
     def on_dnd_toggle_button_toggled(self, widget):
@@ -997,7 +1079,7 @@ class MyData:
         other_tv = self.treeview_sort if tv == self.treeview_dnd else self.treeview_dnd
         '''
         First detect which view got its columns rearranged.
-        '''
+        '''#pylint: disable-msg=W0105
         GObject.GObject.handler_block_by_func(tv, self.on_columns_changed)
         GObject.GObject.handler_block_by_func(other_tv, self.on_columns_changed)
         '''
@@ -1005,25 +1087,27 @@ class MyData:
         done processing the change the user made so the changes it makes to the
         "other_tv" columns don't themselves generate attempts to rearrange the
         columns in tv.
-        '''    
+        ''' #pylint: disable-msg=W0105   
         for i in range(len(tv.get_columns())-1):
             '''
             Simple sort algorithm using only method available to move existing columns: for
             each column but the last in the changed tv (leader), find the following column
             (follower) and then make the other_tv insert its column with the same title as
             follower after its column with the same title as leader. 
-            '''
+            '''#pylint: disable-msg=W0105
             leader = tv.get_columns()[i].get_title()
             follower = tv.get_columns()[i+1].get_title()
             leader2 = _get_column_by_title(leader, other_tv)
-            other_tv.move_column_after(_get_column_by_title(follower, other_tv), leader2)
+            other_tv.move_column_after(
+                _get_column_by_title(follower, other_tv), leader2)
                
         GObject.GObject.handler_unblock_by_func(tv, self.on_columns_changed)
-        GObject.GObject.handler_unblock_by_func(other_tv, self.on_columns_changed)
+        GObject.GObject.handler_unblock_by_func(
+                    other_tv, self.on_columns_changed)
         '''
-        Unblock this handler now that its work is done so that it can respond to new
-        column rearrangements.
-        '''
+        Unblock this handler now that its work is done so that it can respond 
+        to new column rearrangements.
+        '''#pylint: disable-msg=W0105
     def on_column_width_changed(self, col, width):
         '''
         Keep widths of columns the same in both sorted and unsorted views.
@@ -1031,27 +1115,30 @@ class MyData:
         other_tv = self.treeview_sort if col.tv == self.treeview_dnd else self.treeview_dnd
         '''
         First determine which view had a column width change.
-        '''        
+        ''' #pylint: disable-msg=W0105       
         other_col = _get_column_by_title(col.get_title(), other_tv)
         '''
         Find the same column in the other view as the one that's had a 
         width change.
-        '''
+        '''#pylint: disable-msg=W0105
         GObject.GObject.handler_block_by_func(col, self.on_column_width_changed)
-        GObject.GObject.handler_block_by_func(other_col, self.on_column_width_changed)
+        GObject.GObject.handler_block_by_func(other_col, 
+                                              self.on_column_width_changed)
         '''
-        Disable this method until we're done processing this width change so that
-        the change in the "slave" column doesn't itself invoke this method and make
-        us chase our tails.
-        '''
+        Disable this method until we're done processing this width change so 
+        that the change in the "slave" column doesn't itself invoke this 
+        method and make us chase our tails.
+        '''#pylint: disable-msg=W0105
         other_col.set_sizing(Gtk.TreeViewColumnSizing.FIXED)
         other_col.set_fixed_width(col.get_width())
         '''
         Change sizing of "slave" column to FIXED so we can set it to the
         width of the column that had its width changed by the user.
-        '''
-        GObject.GObject.handler_unblock_by_func(col, self.on_column_width_changed)
-        GObject.GObject.handler_unblock_by_func(other_col, self.on_column_width_changed)
+        '''#pylint: disable-msg=W0105
+        GObject.GObject.handler_unblock_by_func(col, 
+                                                self.on_column_width_changed)
+        GObject.GObject.handler_unblock_by_func(other_col, 
+                                                self.on_column_width_changed)
 
         other_col.set_resizable(True)
         '''
@@ -1063,65 +1150,80 @@ class MyData:
         columns is expanded, its new size will become "fixed" and the
         user will not be able to reduce that width unless the column is
         made resizable. This is a kludgy solution that should be improved.
-        '''
+        '''#pylint: disable-msg=W0105
         return
-        
+
+def _restart_edit(tv, path, col):
+    '''
+    See comment above call to ErrorCheck in validation_on_edited()
+    method. The set_cursor() method causes the treeview to emit the
+    "editing-started" signal
+    '''#pylint: disable-msg=W0105
+    tv.set_cursor(Gtk.TreePath.new_from_string(path), col, True)
+    return False
+    '''
+    Return False so that this method called from idle_add() won't 
+    go on running forever.
+    '''#pylint: disable-msg=W0105, W0101        
+
 def _error_check(col_num, text):
+    '''
+    Check proposed input for invalid data. Return True if there's an error,
+    False if everything's good.
+    '''
+    if col_num == PROJECT:
         '''
-        Check proposed input for invalid data. Return True if there's an error,
-        False if everything's good.
-        '''
-        if col_num == PROJECT:
-            '''If column calls for a string, it cannot be empty '''
-            if not text:
-                msg = Gtk.MessageDialog(None, Gtk.DialogFlags.MODAL,
-                                Gtk.MessageType.ERROR, Gtk.ButtonsType.OK,
-                                "Invalid or incomplete Project entry.\n"  + \
-                                "Project Field cannot be blank.")
-                msg.set_title("Project Entry Error!")
-                msg.run()
-                msg.destroy()
-                return True
-            else:
-                return False
-        elif col_num == CONTEXT:
-            if (len(text) < 2 or not text.startswith('@')):
-                msg = Gtk.MessageDialog(None, Gtk.DialogFlags.MODAL,
-                                Gtk.MessageType.ERROR, Gtk.ButtonsType.OK,
-                                "Invalid or incomplete Context entry.\n" + \
-                                 "Entry must be at least two characters starting with @")
-                msg.set_title("Context Entry Error!")
-                msg.run()
-                msg.destroy()
-                return True
-            else:
-                return False
-            
-        elif col_num == PRIORITY:            
-            '''
-            If column calls for a number, it must be between 1 and 4. The
-            Spinbutton and its adjustment should guarantee compliance, but
-            we check here because the user could enter an invalid value from
-            the keyboard.
-            '''
-            if ((not isinstance(text, int)) or ((text < 1) or (text > 4))):
-                msg = Gtk.MessageDialog(None, Gtk.DialogFlags.MODAL,
-                    Gtk.MessageType.ERROR, Gtk.ButtonsType.OK,
-                    "Priority value must be an integer between 1 and 4.")
-                msg.set_title("Priority Entry Error!")
-                msg.run()
-                msg.destroy()
-                return True
-            else:
-                return False
-        else:
+        If column calls for a string, it cannot be empty
+        '''#pylint: disable-msg=W0105
+        if not text:
             msg = Gtk.MessageDialog(None, Gtk.DialogFlags.MODAL,
-                                Gtk.MessageType.ERROR, Gtk.ButtonsType.OK,
-                                "Unknown Data Entry Error.")
-            msg.set_title("Unknown Data Entry Error!")
+                            Gtk.MessageType.ERROR, Gtk.ButtonsType.OK,
+                            "Invalid or incomplete Project entry.\n"  + \
+                            "Project Field cannot be blank.")
+            msg.set_title("Project Entry Error!")
             msg.run()
             msg.destroy()
             return True
+        else:
+            return False
+    elif col_num == CONTEXT:
+        if (len(text) < 2 or not text.startswith('@')):
+            msg = Gtk.MessageDialog(None, Gtk.DialogFlags.MODAL,
+                            Gtk.MessageType.ERROR, Gtk.ButtonsType.OK,
+                            "Invalid or incomplete Context entry.\n" + \
+                            "Entry must be at least two characters starting with @")
+            msg.set_title("Context Entry Error!")
+            msg.run()
+            msg.destroy()
+            return True
+        else:
+            return False
+            
+    elif col_num == PRIORITY:            
+        '''
+        If column calls for a number, it must be between 1 and 4. The
+        Spinbutton and its adjustment should guarantee compliance, but
+        we check here because the user could enter an invalid value from
+        the keyboard.
+        '''#pylint: disable-msg=W0105
+        if ((not isinstance(text, int)) or ((text < 1) or (text > 4))):
+            msg = Gtk.MessageDialog(None, Gtk.DialogFlags.MODAL,
+                Gtk.MessageType.ERROR, Gtk.ButtonsType.OK,
+                "Priority value must be an integer between 1 and 4.")
+            msg.set_title("Priority Entry Error!")
+            msg.run()
+            msg.destroy()
+            return True
+        else:
+            return False
+    else:
+        msg = Gtk.MessageDialog(None, Gtk.DialogFlags.MODAL,
+                            Gtk.MessageType.ERROR, Gtk.ButtonsType.OK,
+                            "Unknown Data Entry Error.")
+        msg.set_title("Unknown Data Entry Error!")
+        msg.run()
+        msg.destroy()
+        return True
 
 def _enter_edit(liststore, path, cell, text):
     '''
@@ -1149,12 +1251,16 @@ def _move_row(model, path, position):
     both for drag and drop and to undo DnD.
     '''
     my_iter = model.get_iter(path)
-    ''' First copy the data from the source row '''
+    ''' First copy the data from the source row '''#pylint: disable-msg=W0105
     row = [model.get_value(my_iter, i) for i in range(model.get_n_columns())]
     model.insert(position, row)
-    ''' Insert the data to the target (new) position '''
+    '''
+    Insert the data to the target (new) position
+    '''#pylint: disable-msg=W0105
     model.remove(my_iter)
-    ''' Finally, delete the source row to complete the move. '''
+    '''
+    Finally, delete the source row to complete the move.
+    '''#pylint: disable-msg=W0105
             
 def _get_column_by_title(title, tv):
     '''
@@ -1176,7 +1282,7 @@ def _format_func(column, cell, model, my_iter, data = None):
     Normal, and UltraLight font weights. Check the Priority
     value for each record; 1s get rendered in UltraHeavy, 2s
     and 3s in Normal and 4s in UltraLight weight script.
-    '''
+    '''#pylint: disable-msg=W0105
     if (model.get_value(my_iter, PRIORITY) == 1):
         cell.set_property("weight", Pango.Weight.ULTRAHEAVY)
     elif (model.get_value(my_iter, PRIORITY) == 4):
@@ -1186,7 +1292,7 @@ def _format_func(column, cell, model, my_iter, data = None):
     if (model.get_value(my_iter, COMPLETED) == True):
         '''
         Records marked Completed (column 3 == True) get strikethrough rendered.
-        '''
+        '''#pylint: disable-msg=W0105
         cell.set_property("strikethrough", True)
     else:
         cell.set_property("strikethrough", False)
